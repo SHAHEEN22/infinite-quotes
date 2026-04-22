@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.local
+.vercel/
+dist/
+*.log
+.vercel
+.DS_Store
+Hermetica/
+svg-sources/
+preview.html
+preview-wikimedia.html
+build-preview.ts
+.env*.local
+.env.prod
