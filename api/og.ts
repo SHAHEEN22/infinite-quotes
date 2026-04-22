@@ -3,14 +3,14 @@ import type { ApiEvent } from "../lib/labels";
 
 export const config = { runtime: "edge" };
 
-// Category → stamp division name
-const DIVISIONS: Record<string, string> = {
-  ufo: "UFO Division",
-  ghost: "Spectral Division",
-  cryptids: "Cryptids Division",
-  mysteries: "Mysteries Division",
-  conspiracy: "Conspiracy Division",
-  occult: "Occult Division",
+// Category → decorative label for the OG image
+const TRADITIONS: Record<string, string> = {
+  philosophy: "Philosophy",
+  literature: "Literature",
+  wisdom: "Wisdom",
+  ethics: "Ethics",
+  metaphysics: "Metaphysics",
+  existentialism: "Existentialism",
 };
 
 // Load serif fonts for the OG image
@@ -39,7 +39,7 @@ export default async function handler(req: Request): Promise<Response> {
   let event: ApiEvent | null = null;
 
   try {
-    const base = process.env.BASE_URL ?? "https://onestrangething.net";
+    const base = process.env.BASE_URL ?? "https://infinite-quotes.vercel.app";
     const url = new URL(req.url, base);
     const dateParam = url.searchParams.get("date");
 
@@ -75,17 +75,30 @@ export default async function handler(req: Request): Promise<Response> {
             textAlign: "center",
           },
           children: [
+            // Decorative infinity symbol
+            {
+              type: "div",
+              props: {
+                style: {
+                  fontSize: 120,
+                  color: "#c4a882",
+                  marginBottom: 10,
+                  lineHeight: 1,
+                },
+                children: "\u221E",
+              },
+            },
             {
               type: "div",
               props: {
                 style: {
                   fontSize: 65,
                   letterSpacing: "0.12em",
-                  color: "#8b4513",
+                  color: "#2a1a0e",
                   textTransform: "uppercase",
                   marginBottom: 20,
                 },
-                children: "One Strange Thing",
+                children: "Infinite Quotes",
               },
             },
             {
@@ -96,7 +109,7 @@ export default async function handler(req: Request): Promise<Response> {
                   color: "#74604a",
                 },
                 children:
-                  "A daily dispatch from the realm of the unexplained",
+                  "Daily philosophical & literary wisdom from history\u2019s greatest minds",
               },
             },
           ],
@@ -116,7 +129,7 @@ export default async function handler(req: Request): Promise<Response> {
   const displaySummary =
     summary.length > 400 ? summary.slice(0, 397) + "\u2026" : summary;
 
-  const division = DIVISIONS[category] ?? "Unknown Division";
+  const tradition = TRADITIONS[category] ?? "Wisdom";
 
   return new ImageResponse(
     {
@@ -151,13 +164,13 @@ export default async function handler(req: Request): Promise<Response> {
                 type: "div",
                 props: {
                   style: {
-                    fontSize: 65,
+                    fontSize: 50,
                     letterSpacing: "0.12em",
-                    color: "#8b4513",
+                    color: "#2a1a0e",
                     textTransform: "uppercase",
                     marginBottom: 8,
                   },
-                  children: "ONE STRANGE THING",
+                  children: "INFINITE QUOTES",
                 },
               },
               // Category label
@@ -193,7 +206,7 @@ export default async function handler(req: Request): Promise<Response> {
                 type: "div",
                 props: {
                   style: {
-                    fontSize: 80,
+                    fontSize: 72,
                     fontWeight: "bold",
                     color: "#2a1a0e",
                     lineHeight: 1.2,
@@ -217,7 +230,7 @@ export default async function handler(req: Request): Promise<Response> {
                   children: displaySummary,
                 },
               },
-              // Declassified stamp (lower position, over summary)
+              // Tradition badge (replaces the old DECLASSIFIED stamp)
               {
                 type: "div",
                 props: {
@@ -227,39 +240,21 @@ export default async function handler(req: Request): Promise<Response> {
                     flexDirection: "column",
                     alignItems: "center",
                     top: 780,
-                    left: 180,
-                    transform: "rotate(-12deg)",
-                    fontFamily: "sans-serif",
-                    fontWeight: 900,
-                    textTransform: "uppercase",
-                    color: "#8a3333",
-                    opacity: 0.72,
-                    border: "8px solid #8a3333",
-                    padding: "16px 36px",
-                    borderRadius: 6,
+                    right: 80,
+                    fontFamily: "EB Garamond",
+                    fontWeight: 700,
+                    color: "#8b4513",
+                    opacity: 0.18,
                     textAlign: "center",
-                    lineHeight: 1.2,
+                    lineHeight: 1,
                   },
-                  children: [
-                    {
-                      type: "div",
-                      props: {
-                        style: { fontSize: 90 },
-                        children: "DECLASSIFIED",
-                      },
+                  children: {
+                    type: "div",
+                    props: {
+                      style: { fontSize: 160 },
+                      children: "\u221E",
                     },
-                    {
-                      type: "div",
-                      props: {
-                        style: {
-                          fontSize: 22,
-                          letterSpacing: "0.25em",
-                          marginTop: 4,
-                        },
-                        children: division,
-                      },
-                    },
-                  ],
+                  },
                 },
               },
               // Footer
@@ -276,7 +271,7 @@ export default async function handler(req: Request): Promise<Response> {
                   children:
                     display_date +
                     (year ? " \u00b7 " + year : "") +
-                    " \u00b7 onestrangething.net",
+                    " \u00b7 Curated by Shaheen \u00b7 Powered by Hiro Report",
                 },
               },
             ],
