@@ -18,7 +18,6 @@ export interface ApiEvent {
   label: string;
   category: string;
   content_type: string;
-  symbol_key?: string;
   date_key: string;
   generated_at: string;
 }
@@ -32,7 +31,6 @@ export function toApiResponse(event: StoredEvent): ApiEvent {
     label: LABELS[event.contentType] ?? LABELS.event,
     category: event.category,
     content_type: event.contentType,
-    symbol_key: event.symbolKey,
     date_key: event.dateKey,
     generated_at: event.generatedAt,
   };
