@@ -6,14 +6,14 @@ export interface SearchResult {
   url: string;
 }
 
-export async function searchParanormalEvents(
+export async function searchQuotes(
   monthName: string,
   day: number
 ): Promise<SearchResult[]> {
   const apiKey = process.env.BRAVE_API_KEY;
   if (!apiKey) throw new Error("BRAVE_API_KEY is not set");
 
-  const query = `paranormal history "${monthName} ${day}" UFO ghost cryptid unexplained event`;
+  const query = `famous quote "${monthName} ${day}" philosopher author wisdom literature born died`;
   const url = new URL(BRAVE_API_URL);
   url.searchParams.set("q", query);
   url.searchParams.set("count", "8");
