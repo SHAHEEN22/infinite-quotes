@@ -10,20 +10,20 @@ function extractJson(text: string): string {
 }
 
 export type EventCategory =
-  | "ufo"
-  | "ghost"
-  | "cryptids"
-  | "mysteries"
-  | "conspiracy"
-  | "occult";
+  | "philosophy"
+  | "literature"
+  | "wisdom"
+  | "ethics"
+  | "metaphysics"
+  | "existentialism";
 
 export type ContentType =
   | "event"
-  | "cryptid"
-  | "trivia"
-  | "secret_society"
-  | "occult_symbol"
-  | "cursed_object";
+  | "greek_philosopher"
+  | "german_philosopher"
+  | "french_philosopher"
+  | "fiction_author"
+  | "classical_author";
 
 export interface ParanormalEvent {
   headline: string;
@@ -31,12 +31,11 @@ export interface ParanormalEvent {
   year: string;
   category: EventCategory;
   contentType: ContentType;
-  symbolKey?: string;
   tags: string[];
 }
 
 const VALID_CATEGORIES: Set<string> = new Set<string>([
-  "ufo", "ghost", "cryptids", "mysteries", "conspiracy", "occult",
+  "philosophy", "literature", "wisdom", "ethics", "metaphysics", "existentialism",
 ]);
 
 const CATEGORY_LIST = Array.from(VALID_CATEGORIES).join(", ");
@@ -50,7 +49,7 @@ function inferTags(headline: string, category: string): string[] {
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "")
     .split(/\s+/)
-    .filter(w => w.length > 2 && !["the", "and", "for", "from", "with", "over", "near"].includes(w))
+    .filter(w => w.length > 2 && !["the", "and", "for", "from", "with", "over", "near", "by"].includes(w))
     .slice(0, 2)
     .join("-");
   if (slug) tags.push(slug);
@@ -61,10 +60,10 @@ function validCategory(val: unknown): EventCategory {
   if (typeof val === "string" && VALID_CATEGORIES.has(val)) {
     return val as EventCategory;
   }
-  return "mysteries";
+  return "wisdom";
 }
 
-export async function summarizeParanormalEvent(
+export async function summarizeQuote(
   monthName: string,
   day: number,
   results: SearchResult[]
@@ -78,33 +77,31 @@ export async function summarizeParanormalEvent(
   const response = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 512,
-    system: `You are a writer for a "This Day in Paranormal History" daily feature.
-Your tone is journalistic and factual — you report events as claimed without skepticism or sensationalism.
-You cover the full gamut: UFO sightings, ghost encounters, cryptid sightings, unexplained disappearances, religious miracles, poltergeists, and other unexplained phenomena.`,
+    system: `You are a curator for a daily philosophical and literary quotes feature. You select profound, thought-provoking quotes from great philosophers and authors throughout history, providing context about the thinker and the significance of their words.`,
     messages: [
       {
         role: "user",
-        content: `Today is ${monthName} ${day}. Based on the search results below, identify the single most notable paranormal event that occurred on this date in history and summarize it.
+        content: `Today is ${monthName} ${day}. Based on the search results below, identify a notable quote from a philosopher or author associated with this date (born, died, or published work). Extract or paraphrase the quote and provide context.
 
 Respond with ONLY a JSON object in this exact format (no markdown, no extra text):
 {
-  "headline": "Short factual headline (max 10 words)",
-  "summary": "2-4 sentences describing the event in a journalistic tone. Include the location and any key figures involved.",
-  "year": "4-digit year of the event",
+  "headline": "The quote (max 15 words)",
+  "summary": "2-4 sentences: who said/wrote it, when, from which work, and why it matters or resonates today.",
+  "year": "4-digit year the quote was written or the person lived",
   "category": "one of: ${CATEGORY_LIST}",
-  "tags": ["1-2 lowercase topic tags for deduplication, e.g. bigfoot, roswell, mothman"]
+  "tags": ["1-2 lowercase topic tags for deduplication, e.g. stoicism, existentialism"]
 }
 
 Category guide:
-- ufo: UFO sightings, alien encounters, abductions
-- ghost: Hauntings, apparitions, spectral encounters, poltergeist activity
-- cryptids: Cryptid sightings (Bigfoot, Loch Ness, Mothman, Chupacabra, Yeti, Wendigo, Skinwalker, etc.)
-- mysteries: Unexplained disappearances, religious miracles, psychic phenomena, remote viewing, ESP, and anything else unexplained
-- conspiracy: Government cover-ups, Men in Black, secret experiments, secret societies
-- occult: Occult practices, esoteric traditions, ritual magic, cursed objects
+- philosophy: philosophical concepts, epistemology, metaphysics
+- literature: literary works, narrative, storytelling
+- wisdom: practical wisdom, virtue, how to live
+- ethics: morality, virtue, right action
+- metaphysics: being, existence, reality
+- existentialism: freedom, meaning, existence
 
-If no clear paranormal event occurred on ${monthName} ${day}, respond with exactly:
-{"headline":"","summary":"","year":"","category":"mysteries"}
+If no clear quote or philosopher found on ${monthName} ${day}, respond with exactly:
+{"headline":"","summary":"","year":"","category":"wisdom"}
 
 Search results:
 ${snippets}`,
@@ -138,7 +135,7 @@ ${snippets}`,
       tags,
     };
   } catch {
-    console.error("[claude] Failed to parse event JSON:", raw.slice(0, 200));
+    console.error("[claude] Failed to parse quote JSON:", raw.slice(0, 200));
     return null;
   }
 }
@@ -146,11 +143,11 @@ ${snippets}`,
 // --- Fallback content rotation ---
 
 const FALLBACK_TYPES: FallbackContentType[] = [
-  "cryptid",
-  "trivia",
-  "secret_society",
-  "occult_symbol",
-  "cursed_object",
+  "greek_philosopher",
+  "german_philosopher",
+  "french_philosopher",
+  "fiction_author",
+  "classical_author",
 ];
 
 function dayOfYear(monthName: string, day: number): number {
@@ -163,82 +160,69 @@ function dayOfYear(monthName: string, day: number): number {
   return Math.floor((d.getTime() - start.getTime()) / 86400000) + 1;
 }
 
-// Imported lazily to avoid circular deps at module level
-let _symbolKeys: string[] | null = null;
-async function getSymbolKeys(): Promise<string[]> {
-  if (!_symbolKeys) {
-    const { SYMBOL_KEYS } = await import("./symbols");
-    _symbolKeys = SYMBOL_KEYS;
-  }
-  return _symbolKeys;
-}
-
 type FallbackContentType = Exclude<ContentType, "event">;
-
-const FALLBACK_PROMPTS: Record<FallbackContentType, (monthName: string, day: number, symbolKeys?: string[]) => string> = {
-  cryptid: (monthName, day) =>
-    `Pick an obscure, lesser-known cryptid from world folklore. Not Bigfoot, Loch Ness, or Mothman — choose something unusual.
+const FALLBACK_PROMPTS: Record<FallbackContentType, (monthName: string, day: number) => string> = {
+  greek_philosopher: (monthName, day) =>
+    `Share a profound quote from an ancient Greek philosopher (Socrates, Plato, Aristotle, Epictetus, Marcus Aurelius, Seneca, etc.). Include the original context and why this idea endures.
 
 Respond with ONLY a JSON object:
 {
-  "headline": "Name of the cryptid (max 6 words)",
-  "summary": "2-4 sentences about this cryptid: where it's reportedly seen, physical description, notable sightings or folklore. Journalistic tone.",
-  "year": "—",
+  "headline": "The quote (max 15 words)",
+  "summary": "2-4 sentences: who said it, when they lived, the context of the quote, and why it matters.",
+  "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}"
 }
 
-Choose the cryptid based on today's date (${monthName} ${day}) for deterministic variety.`,
+Choose based on today's date (${monthName} ${day}) for deterministic variety.`,
 
-  trivia: (monthName, day) =>
-    `Share an obscure piece of paranormal trivia — a strange fact, a lesser-known incident, or a weird historical connection to the paranormal. Not well-known stories.
+  german_philosopher: (monthName, day) =>
+    `Share a thought-provoking quote from a German philosopher (16th-20th century: Kant, Hegel, Nietzsche, Schopenhauer, Heidegger, Marx, Leibniz, etc.). Provide context about the work it comes from.
 
 Respond with ONLY a JSON object:
 {
-  "headline": "Short intriguing headline (max 8 words)",
-  "summary": "2-4 sentences of fascinating paranormal trivia. Journalistic tone, factual reporting of claims.",
-  "year": "—",
+  "headline": "The quote (max 15 words)",
+  "summary": "2-4 sentences: who said it, the work it's from, the philosophical context, and its significance.",
+  "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}"
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
 
-  secret_society: (monthName, day) =>
-    `Pick an obscure secret society, esoteric order, or occult organization from history. Not the Illuminati or Freemasons — choose something lesser-known.
+  french_philosopher: (monthName, day) =>
+    `Share an insightful quote from a French philosopher (16th-20th century: Descartes, Voltaire, Rousseau, Montaigne, Pascal, Sartre, Camus, de Beauvoir, Foucault, etc.). Explain its philosophical significance.
 
 Respond with ONLY a JSON object:
 {
-  "headline": "Name of the society (max 6 words)",
-  "summary": "2-4 sentences: when it was active, its beliefs/goals, notable members or incidents. Journalistic tone.",
-  "year": "—",
-  "category": "conspiracy"
+  "headline": "The quote (max 15 words)",
+  "summary": "2-4 sentences: who said it, the philosophical tradition, the context of the quote, and why it endures.",
+  "year": "4-digit year or approximate era",
+  "category": "one of: ${CATEGORY_LIST}"
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
 
-  occult_symbol: (_monthName, _day, symbolKeys) =>
-    `Pick one occult or esoteric symbol from this list and describe its history and meaning:
-${(symbolKeys ?? []).join(", ")}
+  fiction_author: (monthName, day) =>
+    `Share a memorable quote from a famous fiction author (English, French, or German: Shakespeare, Dickens, Austen, Wilde, Orwell, Tolkien, Hugo, Flaubert, Proust, Goethe, Kafka, Mann, Hesse, etc.). Explain the work it comes from and its literary significance.
 
 Respond with ONLY a JSON object:
 {
-  "headline": "Name of the symbol (max 5 words)",
-  "summary": "2-4 sentences about this symbol: its origin, tradition it belongs to, and what it represents. Journalistic tone.",
-  "year": "—",
-  "category": "occult",
-  "symbolKey": "exact_key_from_list"
+  "headline": "The quote (max 15 words)",
+  "summary": "2-4 sentences: who wrote it, which work it's from, the literary context, and why this passage resonates.",
+  "year": "4-digit year or approximate era",
+  "category": "one of: ${CATEGORY_LIST}"
 }
 
-The symbolKey MUST be one of the keys listed above, exactly as written.`,
+Choose based on today's date (${monthName} ${day}) for variety.`,
 
-  cursed_object: (monthName, day) =>
-    `Pick an obscure allegedly cursed object from history or folklore. Not the Hope Diamond or King Tut's tomb — choose something lesser-known.
+  classical_author: (monthName, day) =>
+    `Share a timeless quote from an ancient Greek or Roman author (Homer, Sophocles, Virgil, Ovid, Horace, Cicero, Plutarch, etc.). Provide context about the original work.
 
 Respond with ONLY a JSON object:
 {
-  "headline": "Name of the cursed object (max 6 words)",
-  "summary": "2-4 sentences: the object's history, what curse is associated with it, and notable incidents. Journalistic tone.",
-  "year": "—",
-  "category": "occult"
+  "headline": "The quote (max 15 words)",
+  "summary": "2-4 sentences: who wrote it, which work, the historical context, and why this wisdom endures across millennia.",
+  "year": "4-digit year or approximate era",
+  "category": "one of: ${CATEGORY_LIST}"
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
@@ -249,20 +233,15 @@ export async function generateFallbackContent(
   day: number
 ): Promise<ParanormalEvent> {
   const doy = dayOfYear(monthName, day);
-  const fallbackType = FALLBACK_TYPES[doy % 5];
-
-  let symbolKeys: string[] | undefined;
-  if (fallbackType === "occult_symbol") {
-    symbolKeys = await getSymbolKeys();
-  }
+  const fallbackType = FALLBACK_TYPES[doy % FALLBACK_TYPES.length];
 
   const promptFn = FALLBACK_PROMPTS[fallbackType];
-  const userPrompt = promptFn(monthName, day, symbolKeys);
+  const userPrompt = promptFn(monthName, day);
 
   const response = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 512,
-    system: `You are a writer for a daily paranormal/occult feature. Your tone is journalistic and factual — you report claims without skepticism or sensationalism. Choose obscure, lesser-known subjects for maximum variety and interest.`,
+    system: `You are a curator for a daily philosophical and literary quotes feature. Your tone is thoughtful and appreciative — you share profound quotes that resonate across time. Select lesser-known or surprising quotes for maximum variety and delight.`,
     messages: [{ role: "user", content: userPrompt }],
   });
 
@@ -276,7 +255,6 @@ export async function generateFallbackContent(
       summary?: string;
       year?: string;
       category?: string;
-      symbolKey?: string;
     };
     if (!parsed.headline || !parsed.summary) {
       console.error("[claude] Fallback missing fields:", text.slice(0, 200));
@@ -288,7 +266,6 @@ export async function generateFallbackContent(
       year: parsed.year ?? "—",
       category: validCategory(parsed.category),
       contentType: fallbackType,
-      symbolKey: fallbackType === "occult_symbol" ? parsed.symbolKey : undefined,
       tags: [],
     };
   } catch {
@@ -299,15 +276,14 @@ export async function generateFallbackContent(
 
 function fallbackDefault(contentType: ContentType): ParanormalEvent {
   return {
-    headline: "Signal From Beyond",
-    summary: "The veil between worlds is thin today. Stay alert for signs of the unexplained.",
+    headline: "In wisdom there is great power.",
+    summary: "The greatest thinkers throughout history have left us words to live by. Today, let us pause and reflect on the enduring power of philosophy and literature to illuminate our path.",
     year: "—",
-    category: "mysteries",
+    category: "wisdom",
     contentType,
     tags: [],
   };
 }
-
 export async function generateContentForDate(
   monthName: string,
   day: number,
@@ -329,64 +305,6 @@ export async function generateContentForDate(
     if (!recentTypes.includes(candidate)) {
       fallbackType = candidate;
       break;
-    }
-  }
-
-  // For occult_symbol, rotate deterministically through the 30 symbols
-  if (fallbackType === "occult_symbol") {
-    const symbolKeys = await getSymbolKeys();
-    const excludeSet = new Set(excludeTags);
-
-    // Find a symbol that isn't excluded
-    let symbolKey: string | null = null;
-    for (let i = 0; i < symbolKeys.length; i++) {
-      const candidate = symbolKeys[(doy + i) % symbolKeys.length];
-      if (!excludeSet.has(candidate)) {
-        symbolKey = candidate;
-        break;
-      }
-    }
-
-    if (!symbolKey) {
-      symbolKey = symbolKeys[doy % symbolKeys.length];
-    }
-
-    const response = await client.messages.create({
-      model: "claude-haiku-4-5",
-      max_tokens: 512,
-      system: `You are a writer for a daily paranormal/occult feature. Your tone is journalistic and factual — you report claims without skepticism or sensationalism.`,
-      messages: [{
-        role: "user",
-        content: `Describe the history and meaning of this occult/esoteric symbol: ${symbolKey.replace(/_/g, " ")}
-
-Respond with ONLY a JSON object:
-{
-  "headline": "Name of the symbol (max 5 words)",
-  "summary": "2-4 sentences about this symbol: its origin, tradition it belongs to, and what it represents. Journalistic tone.",
-  "year": "—",
-  "category": "occult",
-  "symbolKey": "${symbolKey}"
-}`,
-      }],
-    });
-
-    const raw = response.content[0].type === "text" ? response.content[0].text.trim() : "";
-    const text = extractJson(raw);
-
-    try {
-      const parsed = JSON.parse(text) as { headline?: string; summary?: string; year?: string; symbolKey?: string };
-      if (!parsed.headline || !parsed.summary) return fallbackDefault(fallbackType);
-      return {
-        headline: parsed.headline,
-        summary: parsed.summary,
-        year: parsed.year ?? "—",
-        category: "occult" as EventCategory,
-        contentType: "occult_symbol" as ContentType,
-        symbolKey: symbolKey,
-        tags: ["occult-symbol", symbolKey],
-      };
-    } catch {
-      return fallbackDefault(fallbackType);
     }
   }
 
@@ -415,18 +333,18 @@ Respond with ONLY a JSON object:
   const response = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 512,
-    system: `You are a writer for a daily paranormal/occult feature. Your tone is journalistic and factual — you report claims without skepticism or sensationalism.`,
+    system: `You are a curator for a daily philosophical and literary quotes feature. Your tone is thoughtful and appreciative — you share profound quotes that resonate across time.`,
     messages: [{
       role: "user",
-      content: `Write about the following ${fallbackType.replace("_", " ")}: ${topic.name}
+      content: `Share a famous quote from ${topic.name}:
 
 Context: ${topic.description}
 
 Respond with ONLY a JSON object:
 {
-  "headline": "Short headline (max 8 words)",
-  "summary": "2-4 sentences about this subject. Journalistic tone, factual reporting of claims.",
-  "year": "Relevant year or —",
+  "headline": "The quote (max 15 words)",
+  "summary": "2-4 sentences: the quote's context, who said/wrote it, and why this wisdom endures.",
+  "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
   "tags": ${JSON.stringify(topic.tags)}
 }`,
