@@ -9,7 +9,7 @@
   var dd = String(now.getUTCDate()).padStart(2, "0");
   var mm = String(now.getUTCMonth() + 1).padStart(2, "0");
   var yyyy = String(now.getUTCFullYear());
-  var todayDayUrl = "https://onestrangething.net/day/" + dd + mm + yyyy;
+  var todayDayUrl = "https://infinite-quotes.vercel.app";
 
   try {
     var res = await fetch("/api/today");
@@ -27,6 +27,17 @@
     document.getElementById("label").textContent = data.label;
     document.getElementById("headline").textContent = data.headline;
     document.getElementById("summary").textContent = data.summary;
+
+    // Display original language text if available and different from headline
+    if (data.original_text && data.original_language) {
+      var $original = document.getElementById("original-text");
+      if ($original) {
+        $original.textContent = data.original_text;
+        $original.hidden = false;
+        var $origLang = document.getElementById("original-language");
+        if ($origLang) $origLang.textContent = "â " + data.original_language;
+      }
+    }
     var timeEl = document.getElementById("display-date");
     timeEl.textContent = data.display_date;
     if (data.generated_at) {
@@ -53,14 +64,14 @@
     document.getElementById("icon-container").appendChild(img);
 
     // Update browser tab title
-    document.title = data.headline + " \u2014 One Strange Thing";
+    document.title = data.headline + " \u2014 Infinite Quotes";
 
     // Action links (share + RSS)
     document.getElementById("actions").hidden = false;
     var $share = document.getElementById("share-btn");
     $share.addEventListener("click", function () {
       var shareData = {
-        title: data.headline + " \u2014 One Strange Thing",
+        title: data.headline + " \u2014 Infinite Quotes",
         text: data.headline + ": " + data.summary.split(".")[0] + ".",
         url: todayDayUrl
       };
@@ -76,7 +87,7 @@
         navigator.share(shareData).catch(function () {});
       } else if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(shareData.url).then(showCopied).catch(function () {
-          // Clipboard API failed (insecure context, permission denied) — use fallback
+          // Clipboard API failed (insecure context, permission denied) â use fallback
           var ta = document.createElement("textarea");
           ta.value = shareData.url;
           ta.style.position = "fixed";
@@ -88,7 +99,7 @@
           showCopied();
         });
       } else {
-        // No clipboard API at all — textarea fallback
+        // No clipboard API at all â textarea fallback
         var ta = document.createElement("textarea");
         ta.value = shareData.url;
         ta.style.position = "fixed";
@@ -117,7 +128,7 @@
   }
 })();
 
-// Triple-click headline — declassified stamp
+// Triple-click headline â infinity symbol flourish
 (function () {
   var $headline = document.getElementById("headline");
   if (!$headline) return;
@@ -134,24 +145,18 @@
       clickCount = 0;
       clearTimeout(clickTimer);
 
-      // Get category for the subtitle
-      var $label = document.getElementById("label");
-      var division = $label ? $label.textContent : "UNKNOWN";
-
-      // Create stamp
+      // Create infinity stamp
       var stamp = document.createElement("div");
       stamp.className = "declassified-stamp";
-      stamp.innerHTML = "DECLASSIFIED<span class='subtitle'>" + division + " DIVISION</span>";
+      stamp.innerHTML = "\u221E";
       document.body.appendChild(stamp);
 
-      // Animate in
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
           stamp.classList.add("visible");
         });
       });
 
-      // Fade out and remove
       setTimeout(function () {
         stamp.classList.remove("visible");
         setTimeout(function () {
@@ -162,7 +167,7 @@
   });
 })();
 
-// Heart easter egg — occult symbol confetti burst (with Easter override)
+// Heart easter egg â occult symbol confetti burst (with Easter override)
 (function () {
   var $heart = document.getElementById("heart");
   if (!$heart || typeof confetti !== "function") return;
@@ -186,12 +191,12 @@
         confetti.shapeFromText({ text: "\u2728", scalar: 2 }),
       ]
     : [
-        confetti.shapeFromText({ text: "✦", scalar: 2 }),
-        confetti.shapeFromText({ text: "☽", scalar: 2 }),
-        confetti.shapeFromText({ text: "☾", scalar: 2 }),
-        confetti.shapeFromText({ text: "⚗", scalar: 2 }),
-        confetti.shapeFromText({ text: "ψ", scalar: 2 }),
-        confetti.shapeFromText({ text: "♡", scalar: 2 }),
+        confetti.shapeFromText({ text: "\u221E", scalar: 2 }),
+        confetti.shapeFromText({ text: "\u2728", scalar: 2 }),
+        confetti.shapeFromText({ text: "\uD83D\uDCDA", scalar: 2 }),
+        confetti.shapeFromText({ text: "\u2606", scalar: 2 }),
+        confetti.shapeFromText({ text: "\u269B", scalar: 2 }),
+        confetti.shapeFromText({ text: "\u2665", scalar: 2 }),
       ];
 
   var colors = isEaster
