@@ -20,6 +20,8 @@ export interface ApiEvent {
   content_type: string;
   date_key: string;
   generated_at: string;
+  original_text?: string;
+  original_language?: string;
 }
 
 export function toApiResponse(event: StoredEvent): ApiEvent {
@@ -33,5 +35,7 @@ export function toApiResponse(event: StoredEvent): ApiEvent {
     content_type: event.contentType,
     date_key: event.dateKey,
     generated_at: event.generatedAt,
+    original_text: event.originalText,
+    original_language: event.originalLanguage,
   };
 }
