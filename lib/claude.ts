@@ -44,7 +44,6 @@ const CATEGORY_LIST = Array.from(VALID_CATEGORIES).join(", ");
 function inferTags(headline: string, category: string): string[] {
   const tags: string[] = [];
   if (category) tags.push(category);
-  // Extract a slug from the headline (first 2-3 meaningful words)
   const slug = headline
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "")
@@ -155,15 +154,21 @@ function dayOfYear(monthName: string, day: number): number {
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
   ].indexOf(monthName);
-  const d = new Date(2000, monthIndex, day); // leap year to handle Feb 29
+  const d = new Date(2000, monthIndex, day);
   const start = new Date(2000, 0, 1);
   return Math.floor((d.getTime() - start.getTime()) / 86400000) + 1;
 }
 
 type FallbackContentType = Exclude<ContentType, "event">;
+
 const FALLBACK_PROMPTS: Record<FallbackContentType, (monthName: string, day: number) => string> = {
   greek_philosopher: (monthName, day) =>
-    `Share a profound quote from an ancient Greek philosopher (Socrates, Plato, Aristotle, Epictetus, Marcus Aurelius, Seneca, etc.). Include the original context and why this idea endures.
+    `Share a profound quote from an ancient Greek or Hellenistic philosopher.
+
+IMPORTANT: You MUST choose from this list ONLY: Socrates, Plato, Aristotle, Epictetus, Marcus Aurelius, Seneca, Zeno of Citium, Epicurus, Heraclitus, Parmenides, Democritus, Diogenes, Pythagoras, Thales, Anaximander.
+Do NOT choose any philosopher from another tradition (no German, French, or modern philosophers).
+
+Include the original context and why this idea endures.
 
 Respond with ONLY a JSON object:
 {
@@ -176,7 +181,12 @@ Respond with ONLY a JSON object:
 Choose based on today's date (${monthName} ${day}) for deterministic variety.`,
 
   german_philosopher: (monthName, day) =>
-    `Share a thought-provoking quote from a German philosopher (16th-20th century: Kant, Hegel, Nietzsche, Schopenhauer, Heidegger, Marx, Leibniz, etc.). Provide context about the work it comes from.
+    `Share a thought-provoking quote from a German-speaking philosopher (16th-20th century).
+
+IMPORTANT: You MUST choose from this list ONLY: Immanuel Kant, Georg Wilhelm Friedrich Hegel, Friedrich Nietzsche, Arthur Schopenhauer, Martin Heidegger, Karl Marx, Gottfried Wilhelm Leibniz, Ludwig Wittgenstein, Edmund Husserl, Hannah Arendt, Friedrich Schelling, Johann Gottlieb Fichte, Max Stirner.
+Do NOT choose any French, Greek, or non-German philosopher.
+
+Provide context about the work it comes from.
 
 Respond with ONLY a JSON object:
 {
@@ -189,7 +199,12 @@ Respond with ONLY a JSON object:
 Choose based on today's date (${monthName} ${day}) for variety.`,
 
   french_philosopher: (monthName, day) =>
-    `Share an insightful quote from a French philosopher (16th-20th century: Descartes, Voltaire, Rousseau, Montaigne, Pascal, Sartre, Camus, de Beauvoir, Foucault, etc.). Explain its philosophical significance.
+    `Share an insightful quote from a French philosopher (16th-20th century).
+
+IMPORTANT: You MUST choose from this list ONLY: Rene Descartes, Voltaire, Jean-Jacques Rousseau, Michel de Montaigne, Blaise Pascal, Jean-Paul Sartre, Albert Camus, Simone de Beauvoir, Michel Foucault, Denis Diderot, Auguste Comte, Henri Bergson, Maurice Merleau-Ponty, Simone Weil.
+Do NOT choose any German, Greek, or non-French philosopher. Nietzsche is GERMAN, not French.
+
+Explain its philosophical significance.
 
 Respond with ONLY a JSON object:
 {
@@ -202,7 +217,12 @@ Respond with ONLY a JSON object:
 Choose based on today's date (${monthName} ${day}) for variety.`,
 
   fiction_author: (monthName, day) =>
-    `Share a memorable quote from a famous fiction author (English, French, or German: Shakespeare, Dickens, Austen, Wilde, Orwell, Tolkien, Hugo, Flaubert, Proust, Goethe, Kafka, Mann, Hesse, etc.). Explain the work it comes from and its literary significance.
+    `Share a memorable quote from a famous fiction author.
+
+IMPORTANT: You MUST choose from this list ONLY: William Shakespeare, Charles Dickens, Jane Austen, Oscar Wilde, George Orwell, J.R.R. Tolkien, Victor Hugo, Gustave Flaubert, Marcel Proust, Johann Wolfgang von Goethe, Franz Kafka, Thomas Mann, Hermann Hesse, Fyodor Dostoevsky, Leo Tolstoy, Mark Twain, Emily Bronte, Virginia Woolf, James Joyce.
+Do NOT choose philosophers — only fiction authors.
+
+Explain the work it comes from and its literary significance.
 
 Respond with ONLY a JSON object:
 {
@@ -215,7 +235,12 @@ Respond with ONLY a JSON object:
 Choose based on today's date (${monthName} ${day}) for variety.`,
 
   classical_author: (monthName, day) =>
-    `Share a timeless quote from an ancient Greek or Roman author (Homer, Sophocles, Virgil, Ovid, Horace, Cicero, Plutarch, etc.). Provide context about the original work.
+    `Share a timeless quote from an ancient Greek or Roman author (not a philosopher — a poet, playwright, or historian).
+
+IMPORTANT: You MUST choose from this list ONLY: Homer, Sophocles, Euripides, Aeschylus, Aristophanes, Virgil, Ovid, Horace, Cicero, Plutarch, Thucydides, Herodotus, Sappho, Pindar, Lucretius, Juvenal.
+Do NOT choose modern authors or philosophers.
+
+Provide context about the original work.
 
 Respond with ONLY a JSON object:
 {
@@ -241,7 +266,7 @@ export async function generateFallbackContent(
   const response = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 512,
-    system: `You are a curator for a daily philosophical and literary quotes feature. Your tone is thoughtful and appreciative — you share profound quotes that resonate across time. Select lesser-known or surprising quotes for maximum variety and delight.`,
+    system: `You are a curator for a daily philosophical and literary quotes feature. Your tone is thoughtful and appreciative — you share profound quotes that resonate across time. Select lesser-known or surprising quotes for maximum variety and delight. CRITICAL: Always respect the nationality/tradition constraint in the prompt. Never mix up philosopher nationalities.`,
     messages: [{ role: "user", content: userPrompt }],
   });
 
@@ -263,7 +288,7 @@ export async function generateFallbackContent(
     return {
       headline: parsed.headline,
       summary: parsed.summary,
-      year: parsed.year ?? "—",
+      year: parsed.year ?? "\u2014",
       category: validCategory(parsed.category),
       contentType: fallbackType,
       tags: [],
@@ -278,12 +303,13 @@ function fallbackDefault(contentType: ContentType): ParanormalEvent {
   return {
     headline: "In wisdom there is great power.",
     summary: "The greatest thinkers throughout history have left us words to live by. Today, let us pause and reflect on the enduring power of philosophy and literature to illuminate our path.",
-    year: "—",
+    year: "\u2014",
     category: "wisdom",
     contentType,
     tags: [],
   };
 }
+
 export async function generateContentForDate(
   monthName: string,
   day: number,
@@ -326,14 +352,13 @@ export async function generateContentForDate(
   }
 
   if (!topic) {
-    // All topics excluded, fall back to open-ended generation
     return generateFallbackContent(monthName, day);
   }
 
   const response = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 512,
-    system: `You are a curator for a daily philosophical and literary quotes feature. Your tone is thoughtful and appreciative — you share profound quotes that resonate across time.`,
+    system: `You are a curator for a daily philosophical and literary quotes feature. Your tone is thoughtful and appreciative — you share profound quotes that resonate across time. CRITICAL: Always respect the nationality/tradition constraint. Never mix up philosopher nationalities.`,
     messages: [{
       role: "user",
       content: `Share a famous quote from ${topic.name}:
@@ -368,7 +393,7 @@ Respond with ONLY a JSON object:
     return {
       headline: parsed.headline,
       summary: parsed.summary,
-      year: parsed.year ?? "—",
+      year: parsed.year ?? "\u2014",
       category: validCategory(parsed.category),
       contentType: fallbackType,
       tags: parsed.tags ?? topic.tags,
