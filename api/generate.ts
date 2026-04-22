@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { searchParanormalEvents } from "../lib/brave";
+import { searchQuotes } from "../lib/brave";
 import {
-  summarizeParanormalEvent,
+  summarizeQuote,
   generateFallbackContent,
   type ParanormalEvent,
 } from "../lib/claude";
@@ -16,7 +16,7 @@ const MONTH_NAMES = [
 
 function getBaseUrl(): string {
   return process.env.BASE_URL
-    ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://paranormnl.vercel.app");
+    ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://infinite-quotes.vercel.app");
 }
 
 async function pushToTrmnl(
@@ -31,7 +31,7 @@ async function pushToTrmnl(
 
   const baseUrl = getBaseUrl();
   const contentType = event.contentType ?? "event";
-  const category = event.category ?? "mysteries";
+  const category = event.category ?? "wisdom";
 
   const mergeVariables: Record<string, string | null> = {
     headline: event.headline,
@@ -96,7 +96,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         year: queued.year,
         category: queued.category,
         contentType: queued.contentType,
-        symbolKey: queued.symbolKey,
         tags: queued.tags,
       };
       await storeEvent(month + 1, day, displayDate, event);
@@ -114,8 +113,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // No queue entry — fall back to live generation
     console.log(`[generate] No queue entry for ${dateKey}, generating live`);
-    const results = await searchParanormalEvents(monthName, day);
-    let event = await summarizeParanormalEvent(monthName, day, results);
+    const results = await searchQuotes(monthName, day);
+    let event = await summarizeQuote(monthName, day, results);
 
     if (!event) {
       event = await generateFallbackContent(monthName, day);
