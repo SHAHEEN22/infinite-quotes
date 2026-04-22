@@ -32,6 +32,8 @@ export interface ParanormalEvent {
   category: EventCategory;
   contentType: ContentType;
   tags: string[];
+  originalText?: string;
+  originalLanguage?: string;
 }
 
 const VALID_CATEGORIES: Set<string> = new Set<string>([
@@ -44,6 +46,7 @@ const CATEGORY_LIST = Array.from(VALID_CATEGORIES).join(", ");
 function inferTags(headline: string, category: string): string[] {
   const tags: string[] = [];
   if (category) tags.push(category);
+  // Extract a slug from the headline (first 2-3 meaningful words)
   const slug = headline
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "")
@@ -88,7 +91,9 @@ Respond with ONLY a JSON object in this exact format (no markdown, no extra text
   "summary": "2-4 sentences: who said/wrote it, when, from which work, and why it matters or resonates today.",
   "year": "4-digit year the quote was written or the person lived",
   "category": "one of: ${CATEGORY_LIST}",
-  "tags": ["1-2 lowercase topic tags for deduplication, e.g. stoicism, existentialism"]
+  "tags": ["1-2 lowercase topic tags for deduplication, e.g. stoicism, existentialism"],
+  "original_text": "The quote in its original language (Greek, Latin, German, French, etc.). If originally in English, repeat the English quote.",
+  "original_language": "The language name, e.g. Ancient Greek, Latin, German, French, English"
 }
 
 Category guide:
@@ -119,6 +124,8 @@ ${snippets}`,
       year?: string;
       category?: string;
       tags?: string[];
+      original_text?: string;
+      original_language?: string;
     };
     if (!parsed.headline || !parsed.summary || !parsed.year) return null;
     const category = validCategory(parsed.category);
@@ -132,6 +139,8 @@ ${snippets}`,
       category,
       contentType: "event",
       tags,
+      originalText: parsed.original_text,
+      originalLanguage: parsed.original_language,
     };
   } catch {
     console.error("[claude] Failed to parse quote JSON:", raw.slice(0, 200));
@@ -154,7 +163,7 @@ function dayOfYear(monthName: string, day: number): number {
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
   ].indexOf(monthName);
-  const d = new Date(2000, monthIndex, day);
+  const d = new Date(2000, monthIndex, day); // leap year to handle Feb 29
   const start = new Date(2000, 0, 1);
   return Math.floor((d.getTime() - start.getTime()) / 86400000) + 1;
 }
@@ -163,91 +172,76 @@ type FallbackContentType = Exclude<ContentType, "event">;
 
 const FALLBACK_PROMPTS: Record<FallbackContentType, (monthName: string, day: number) => string> = {
   greek_philosopher: (monthName, day) =>
-    `Share a profound quote from an ancient Greek or Hellenistic philosopher.
-
-IMPORTANT: You MUST choose from this list ONLY: Socrates, Plato, Aristotle, Epictetus, Marcus Aurelius, Seneca, Zeno of Citium, Epicurus, Heraclitus, Parmenides, Democritus, Diogenes, Pythagoras, Thales, Anaximander.
-Do NOT choose any philosopher from another tradition (no German, French, or modern philosophers).
-
-Include the original context and why this idea endures.
+    `Share a profound quote from an ancient Greek philosopher (Socrates, Plato, Aristotle, Epictetus, Marcus Aurelius, Seneca, etc.). Include the original context and why this idea endures.
 
 Respond with ONLY a JSON object:
 {
   "headline": "The quote (max 15 words)",
   "summary": "2-4 sentences: who said it, when they lived, the context of the quote, and why it matters.",
   "year": "4-digit year or approximate era",
-  "category": "one of: ${CATEGORY_LIST}"
+  "category": "one of: ${CATEGORY_LIST}",
+  "original_text": "The quote in its original language (Ancient Greek, Latin, etc.). If originally English, repeat the English.",
+  "original_language": "The language name, e.g. Ancient Greek, Latin"
 }
 
 Choose based on today's date (${monthName} ${day}) for deterministic variety.`,
 
   german_philosopher: (monthName, day) =>
-    `Share a thought-provoking quote from a German-speaking philosopher (16th-20th century).
-
-IMPORTANT: You MUST choose from this list ONLY: Immanuel Kant, Georg Wilhelm Friedrich Hegel, Friedrich Nietzsche, Arthur Schopenhauer, Martin Heidegger, Karl Marx, Gottfried Wilhelm Leibniz, Ludwig Wittgenstein, Edmund Husserl, Hannah Arendt, Friedrich Schelling, Johann Gottlieb Fichte, Max Stirner.
-Do NOT choose any French, Greek, or non-German philosopher.
-
-Provide context about the work it comes from.
+    `Share a thought-provoking quote from a German philosopher (16th-20th century: Kant, Hegel, Nietzsche, Schopenhauer, Heidegger, Marx, Leibniz, etc.). Provide context about the work it comes from.
 
 Respond with ONLY a JSON object:
 {
   "headline": "The quote (max 15 words)",
   "summary": "2-4 sentences: who said it, the work it's from, the philosophical context, and its significance.",
   "year": "4-digit year or approximate era",
-  "category": "one of: ${CATEGORY_LIST}"
+  "category": "one of: ${CATEGORY_LIST}",
+  "original_text": "The quote in its original German.",
+  "original_language": "German"
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
 
   french_philosopher: (monthName, day) =>
-    `Share an insightful quote from a French philosopher (16th-20th century).
-
-IMPORTANT: You MUST choose from this list ONLY: Rene Descartes, Voltaire, Jean-Jacques Rousseau, Michel de Montaigne, Blaise Pascal, Jean-Paul Sartre, Albert Camus, Simone de Beauvoir, Michel Foucault, Denis Diderot, Auguste Comte, Henri Bergson, Maurice Merleau-Ponty, Simone Weil.
-Do NOT choose any German, Greek, or non-French philosopher. Nietzsche is GERMAN, not French.
-
-Explain its philosophical significance.
+    `Share an insightful quote from a French philosopher (16th-20th century: Descartes, Voltaire, Rousseau, Montaigne, Pascal, Sartre, Camus, de Beauvoir, Foucault, etc.). Explain its philosophical significance.
 
 Respond with ONLY a JSON object:
 {
   "headline": "The quote (max 15 words)",
   "summary": "2-4 sentences: who said it, the philosophical tradition, the context of the quote, and why it endures.",
   "year": "4-digit year or approximate era",
-  "category": "one of: ${CATEGORY_LIST}"
+  "category": "one of: ${CATEGORY_LIST}",
+  "original_text": "The quote in its original French.",
+  "original_language": "French"
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
 
   fiction_author: (monthName, day) =>
-    `Share a memorable quote from a famous fiction author.
-
-IMPORTANT: You MUST choose from this list ONLY: William Shakespeare, Charles Dickens, Jane Austen, Oscar Wilde, George Orwell, J.R.R. Tolkien, Victor Hugo, Gustave Flaubert, Marcel Proust, Johann Wolfgang von Goethe, Franz Kafka, Thomas Mann, Hermann Hesse, Fyodor Dostoevsky, Leo Tolstoy, Mark Twain, Emily Bronte, Virginia Woolf, James Joyce.
-Do NOT choose philosophers — only fiction authors.
-
-Explain the work it comes from and its literary significance.
+    `Share a memorable quote from a famous fiction author (English, French, or German: Shakespeare, Dickens, Austen, Wilde, Orwell, Tolkien, Hugo, Flaubert, Proust, Goethe, Kafka, Mann, Hesse, etc.). Explain the work it comes from and its literary significance.
 
 Respond with ONLY a JSON object:
 {
   "headline": "The quote (max 15 words)",
   "summary": "2-4 sentences: who wrote it, which work it's from, the literary context, and why this passage resonates.",
   "year": "4-digit year or approximate era",
-  "category": "one of: ${CATEGORY_LIST}"
+  "category": "one of: ${CATEGORY_LIST}",
+  "original_text": "The quote in its original language (English, French, German, etc.).",
+  "original_language": "The language name, e.g. English, French, German"
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
 
   classical_author: (monthName, day) =>
-    `Share a timeless quote from an ancient Greek or Roman author (not a philosopher — a poet, playwright, or historian).
-
-IMPORTANT: You MUST choose from this list ONLY: Homer, Sophocles, Euripides, Aeschylus, Aristophanes, Virgil, Ovid, Horace, Cicero, Plutarch, Thucydides, Herodotus, Sappho, Pindar, Lucretius, Juvenal.
-Do NOT choose modern authors or philosophers.
-
-Provide context about the original work.
+    `Share a timeless quote from an ancient Greek or Roman author (Homer, Sophocles, Virgil, Ovid, Horace, Cicero, Plutarch, etc.). Provide context about the original work.
 
 Respond with ONLY a JSON object:
 {
   "headline": "The quote (max 15 words)",
   "summary": "2-4 sentences: who wrote it, which work, the historical context, and why this wisdom endures across millennia.",
   "year": "4-digit year or approximate era",
-  "category": "one of: ${CATEGORY_LIST}"
+  "category": "one of: ${CATEGORY_LIST}",
+  "original_text": "The quote in its original language (Ancient Greek, Latin, etc.).",
+  "original_language": "The language name, e.g. Ancient Greek, Latin"
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
@@ -266,7 +260,7 @@ export async function generateFallbackContent(
   const response = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 512,
-    system: `You are a curator for a daily philosophical and literary quotes feature. Your tone is thoughtful and appreciative — you share profound quotes that resonate across time. Select lesser-known or surprising quotes for maximum variety and delight. CRITICAL: Always respect the nationality/tradition constraint in the prompt. Never mix up philosopher nationalities.`,
+    system: `You are a curator for a daily philosophical and literary quotes feature. Your tone is thoughtful and appreciative â you share profound quotes that resonate across time. Select lesser-known or surprising quotes for maximum variety and delight.`,
     messages: [{ role: "user", content: userPrompt }],
   });
 
@@ -280,6 +274,8 @@ export async function generateFallbackContent(
       summary?: string;
       year?: string;
       category?: string;
+      original_text?: string;
+      original_language?: string;
     };
     if (!parsed.headline || !parsed.summary) {
       console.error("[claude] Fallback missing fields:", text.slice(0, 200));
@@ -288,10 +284,12 @@ export async function generateFallbackContent(
     return {
       headline: parsed.headline,
       summary: parsed.summary,
-      year: parsed.year ?? "\u2014",
+      year: parsed.year ?? "â",
       category: validCategory(parsed.category),
       contentType: fallbackType,
       tags: [],
+      originalText: parsed.original_text,
+      originalLanguage: parsed.original_language,
     };
   } catch {
     console.error("[claude] Failed to parse fallback JSON:", raw.slice(0, 200));
@@ -303,7 +301,7 @@ function fallbackDefault(contentType: ContentType): ParanormalEvent {
   return {
     headline: "In wisdom there is great power.",
     summary: "The greatest thinkers throughout history have left us words to live by. Today, let us pause and reflect on the enduring power of philosophy and literature to illuminate our path.",
-    year: "\u2014",
+    year: "â",
     category: "wisdom",
     contentType,
     tags: [],
@@ -352,13 +350,14 @@ export async function generateContentForDate(
   }
 
   if (!topic) {
+    // All topics excluded, fall back to open-ended generation
     return generateFallbackContent(monthName, day);
   }
 
   const response = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 512,
-    system: `You are a curator for a daily philosophical and literary quotes feature. Your tone is thoughtful and appreciative — you share profound quotes that resonate across time. CRITICAL: Always respect the nationality/tradition constraint. Never mix up philosopher nationalities.`,
+    system: `You are a curator for a daily philosophical and literary quotes feature. Your tone is thoughtful and appreciative â you share profound quotes that resonate across time.`,
     messages: [{
       role: "user",
       content: `Share a famous quote from ${topic.name}:
@@ -371,7 +370,9 @@ Respond with ONLY a JSON object:
   "summary": "2-4 sentences: the quote's context, who said/wrote it, and why this wisdom endures.",
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
-  "tags": ${JSON.stringify(topic.tags)}
+  "tags": ${JSON.stringify(topic.tags)},
+  "original_text": "The quote in its original language. If originally English, repeat the English.",
+  "original_language": "The language name, e.g. Ancient Greek, Latin, German, French, English"
 }`,
     }],
   });
@@ -386,6 +387,8 @@ Respond with ONLY a JSON object:
       year?: string;
       category?: string;
       tags?: string[];
+      original_text?: string;
+      original_language?: string;
     };
     if (!parsed.headline || !parsed.summary) {
       return fallbackDefault(fallbackType);
@@ -393,10 +396,12 @@ Respond with ONLY a JSON object:
     return {
       headline: parsed.headline,
       summary: parsed.summary,
-      year: parsed.year ?? "\u2014",
+      year: parsed.year ?? "â",
       category: validCategory(parsed.category),
       contentType: fallbackType,
       tags: parsed.tags ?? topic.tags,
+      originalText: parsed.original_text,
+      originalLanguage: parsed.original_language,
     };
   } catch {
     console.error("[claude] Failed to parse curated fallback JSON:", raw.slice(0, 200));
