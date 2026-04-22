@@ -2,12 +2,12 @@ import type { ContentType } from "./claude";
 import type { StoredEvent } from "./store";
 
 export const LABELS: Record<ContentType, string> = {
-  event: "THIS DAY IN PARANORMAL HISTORY",
-  cryptid: "CRYPTID OF THE DAY",
-  trivia: "PARANORMAL TRIVIA",
-  secret_society: "SECRET SOCIETIES",
-  occult_symbol: "OCCULT SYMBOL OF THE DAY",
-  cursed_object: "CURSED OBJECT OF THE DAY",
+  event: "TODAY'S QUOTE",
+  greek_philosopher: "ANCIENT WISDOM",
+  german_philosopher: "GERMAN PHILOSOPHY",
+  french_philosopher: "FRENCH PHILOSOPHY",
+  fiction_author: "LITERARY WISDOM",
+  classical_author: "CLASSICAL LITERATURE",
 };
 
 export interface ApiEvent {
