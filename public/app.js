@@ -35,7 +35,7 @@
         $original.textContent = data.original_text;
         $original.hidden = false;
         var $origLang = document.getElementById("original-language");
-        if ($origLang) $origLang.textContent = "â " + data.original_language;
+        if ($origLang) $origLang.textContent = "\u2014 " + data.original_language;
       }
     }
     var timeEl = document.getElementById("display-date");
