@@ -92,8 +92,8 @@ Respond with ONLY a JSON object in this exact format (no markdown, no extra text
   "year": "4-digit year the quote was written or the person lived",
   "category": "one of: ${CATEGORY_LIST}",
   "tags": ["1-2 lowercase topic tags for deduplication, e.g. stoicism, existentialism"],
-  "original_text": "The quote in its original language (Greek, Latin, German, French, etc.). If originally in English, repeat the English quote.",
-  "original_language": "The language name, e.g. Ancient Greek, Latin, German, French, English"
+  "original_text": "The quote written ONLY in its original language â the actual Ancient Greek, Latin, German, or French words. Never include English translations here. If the quote was originally in English, leave this empty.",
+  "original_language": "The single original language name, e.g. Ancient Greek, Latin, German, French"
 }
 
 Category guide:
@@ -180,8 +180,8 @@ Respond with ONLY a JSON object:
   "summary": "2-4 sentences: who said it, when they lived, the context of the quote, and why it matters.",
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
-  "original_text": "The quote in its original language (Ancient Greek, Latin, etc.). If originally English, repeat the English.",
-  "original_language": "The language name, e.g. Ancient Greek, Latin"
+  "original_text": "The quote ONLY in its original language â the actual Ancient Greek or Latin words, no English. If originally English, leave empty.",
+  "original_language": "The single original language, e.g. Ancient Greek, Latin"
 }
 
 Choose based on today's date (${monthName} ${day}) for deterministic variety.`,
@@ -195,7 +195,7 @@ Respond with ONLY a JSON object:
   "summary": "2-4 sentences: who said it, the work it's from, the philosophical context, and its significance.",
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
-  "original_text": "The quote in its original German.",
+  "original_text": "The quote written ONLY in German â the actual German words, no English translation.",
   "original_language": "German"
 }
 
@@ -210,7 +210,7 @@ Respond with ONLY a JSON object:
   "summary": "2-4 sentences: who said it, the philosophical tradition, the context of the quote, and why it endures.",
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
-  "original_text": "The quote in its original French.",
+  "original_text": "The quote written ONLY in French â the actual French words, no English translation.",
   "original_language": "French"
 }
 
@@ -225,8 +225,8 @@ Respond with ONLY a JSON object:
   "summary": "2-4 sentences: who wrote it, which work it's from, the literary context, and why this passage resonates.",
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
-  "original_text": "The quote in its original language (English, French, German, etc.).",
-  "original_language": "The language name, e.g. English, French, German"
+  "original_text": "The quote ONLY in its original language â the actual French, German, etc. words. No English. If originally English, leave empty.",
+  "original_language": "The single original language, e.g. English, French, German"
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
@@ -240,12 +240,13 @@ Respond with ONLY a JSON object:
   "summary": "2-4 sentences: who wrote it, which work, the historical context, and why this wisdom endures across millennia.",
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
-  "original_text": "The quote in its original language (Ancient Greek, Latin, etc.).",
-  "original_language": "The language name, e.g. Ancient Greek, Latin"
+  "original_text": "The quote ONLY in its original language â the actual Ancient Greek or Latin words, no English. If originally English, leave empty.",
+  "original_language": "The single original language, e.g. Ancient Greek, Latin"
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
 };
+
 
 export async function generateFallbackContent(
   monthName: string,
@@ -371,8 +372,8 @@ Respond with ONLY a JSON object:
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
   "tags": ${JSON.stringify(topic.tags)},
-  "original_text": "The quote in its original language. If originally English, repeat the English.",
-  "original_language": "The language name, e.g. Ancient Greek, Latin, German, French, English"
+  "original_text": "The quote ONLY in its original language â actual Greek, Latin, German, or French words. No English. If originally English, leave empty.",
+  "original_language": "The single original language, e.g. Ancient Greek, Latin, German, French"
 }`,
     }],
   });
