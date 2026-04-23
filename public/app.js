@@ -36,9 +36,9 @@
         $original.hidden = false;
         var $origLang = document.getElementById("original-language");
         if ($origLang) {
-          // Show attribution (author name) if available, with language in parentheses
+          // Show attribution (author name) if available
           if (data.original_attribution) {
-            $origLang.textContent = "\u2014 " + data.original_attribution + " (" + data.original_language + ")";
+            $origLang.textContent = "\u2014 " + data.original_attribution;
           } else {
             $origLang.textContent = "\u2014 " + data.original_language;
           }
@@ -50,7 +50,16 @@
     if (data.generated_at) {
       timeEl.setAttribute("datetime", data.generated_at.slice(0, 10));
     }
-    document.getElementById("year").textContent = data.year;
+    // Format year with CE/BCE convention
+    var yearStr = String(data.year || "");
+    if (yearStr && !/[a-zA-Z]/.test(yearStr)) {
+      // Plain number — add CE/BCE
+      var yearNum = parseInt(yearStr, 10);
+      if (!isNaN(yearNum)) {
+        yearStr = yearNum < 0 ? Math.abs(yearNum) + " BCE" : yearNum + " CE";
+      }
+    }
+    document.getElementById("year").textContent = yearStr;
 
     // Icon: use specific symbol SVG for occult_symbol content, otherwise category icon
     var img = document.createElement("img");

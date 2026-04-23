@@ -90,7 +90,7 @@ Respond with ONLY a JSON object in this exact format (no markdown, no extra text
 {
   "headline": "The quote (max 15 words)",
   "summary": "2-4 sentences: who said/wrote it, when, from which work, and why it matters or resonates today.",
-  "year": "4-digit year the quote was written or the person lived",
+  "year": "Year with CE or BCE suffix, e.g. 399 BCE, 1785 CE",
   "category": "one of: ${CATEGORY_LIST}",
   "tags": ["1-2 lowercase topic tags for deduplication, e.g. stoicism, existentialism"],
   "original_text": "The quote written ONLY in its original language \u2014 the actual Ancient Greek, Latin, German, or French words. Never include English translations here. If the quote was originally in English, leave this empty.",
@@ -186,7 +186,7 @@ Respond with ONLY a JSON object:
 {
   "headline": "The quote (max 15 words)",
   "summary": "2-4 sentences: who said it, when they lived, the context of the quote, and why it matters.",
-  "year": "4-digit year or approximate era",
+  "year": "Year with CE or BCE suffix, e.g. 399 BCE, 1785 CE",
   "category": "one of: ${CATEGORY_LIST}",
   "original_text": "The quote ONLY in its original language \u2014 the actual Ancient Greek or Latin words, no English. If originally English, leave empty.",
   "original_language": "The single original language, e.g. Ancient Greek, Latin",
@@ -204,7 +204,7 @@ Respond with ONLY a JSON object:
 {
   "headline": "The quote (max 15 words)",
   "summary": "2-4 sentences: who said it, the work it's from, the philosophical context, and its significance.",
-  "year": "4-digit year or approximate era",
+  "year": "Year with CE or BCE suffix, e.g. 399 BCE, 1785 CE",
   "category": "one of: ${CATEGORY_LIST}",
   "original_text": "The quote written ONLY in German \u2014 the actual German words, no English translation.",
   "original_language": "German",
@@ -222,7 +222,7 @@ Respond with ONLY a JSON object:
 {
   "headline": "The quote (max 15 words)",
   "summary": "2-4 sentences: who said it, the philosophical tradition, the context of the quote, and why it endures.",
-  "year": "4-digit year or approximate era",
+  "year": "Year with CE or BCE suffix, e.g. 399 BCE, 1785 CE",
   "category": "one of: ${CATEGORY_LIST}",
   "original_text": "The quote written ONLY in French \u2014 the actual French words, no English translation.",
   "original_language": "French",
@@ -240,7 +240,7 @@ Respond with ONLY a JSON object:
 {
   "headline": "The quote (max 15 words)",
   "summary": "2-4 sentences: who wrote it, which work it's from, the literary context, and why this passage resonates.",
-  "year": "4-digit year or approximate era",
+  "year": "Year with CE or BCE suffix, e.g. 399 BCE, 1785 CE",
   "category": "one of: ${CATEGORY_LIST}",
   "original_text": "The quote ONLY in its original language \u2014 the actual French, German, etc. words. No English. If originally English, leave empty.",
   "original_language": "The single original language, e.g. English, French, German",
@@ -258,7 +258,7 @@ Respond with ONLY a JSON object:
 {
   "headline": "The quote (max 15 words)",
   "summary": "2-4 sentences: who wrote it, which work, the historical context, and why this wisdom endures across millennia.",
-  "year": "4-digit year or approximate era",
+  "year": "Year with CE or BCE suffix, e.g. 399 BCE, 1785 CE",
   "category": "one of: ${CATEGORY_LIST}",
   "original_text": "The quote ONLY in its original language \u2014 the actual Ancient Greek or Latin words, no English. If originally English, leave empty.",
   "original_language": "The single original language, e.g. Ancient Greek, Latin",
@@ -394,7 +394,7 @@ Respond with ONLY a JSON object:
 {
   "headline": "The quote (max 15 words)",
   "summary": "2-4 sentences: the quote's context, who said/wrote it, and why this wisdom endures.",
-  "year": "4-digit year or approximate era",
+  "year": "Year with CE or BCE suffix, e.g. 399 BCE, 1785 CE",
   "category": "one of: ${CATEGORY_LIST}",
   "tags": ${JSON.stringify(topic.tags)},
   "original_text": "The quote ONLY in its original language \u2014 actual Greek, Latin, German, or French words. No English. If originally English, leave empty.",
