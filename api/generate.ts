@@ -1,8 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { searchQuotes } from "../lib/brave";
 import {
-  summarizeQuote,
-  generateFallbackContent,
   type ParanormalEvent,
 } from "../lib/claude";
 import { storeEvent } from "../lib/store";
@@ -31,7 +28,7 @@ async function pushToTrmnl(
 
   const baseUrl = getBaseUrl();
   const contentType = event.contentType ?? "event";
-  const category = event.category ?? "wisdom";
+  const category = event.category ?? "mysteries";
 
   const mergeVariables: Record<string, string | null> = {
     headline: event.headline,
@@ -96,6 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         year: queued.year,
         category: queued.category,
         contentType: queued.contentType,
+        symbolKey: queued.symbolKey,
         tags: queued.tags,
       };
       await storeEvent(month + 1, day, displayDate, event);
@@ -111,14 +109,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // No queue entry — fall back to live generation
-    console.log(`[generate] No queue entry for ${dateKey}, generating live`);
-    const results = await searchQuotes(monthName, day);
-    let event = await summarizeQuote(monthName, day, results);
-
-    if (!event) {
-      event = await generateFallbackContent(monthName, day);
-    }
+    // No queue entry â generate a random curated quote (not date-biased)
+    console.log(`[generate] No queue entry for ${dateKey}, generating curated content`);
+    const { generateContentForDate } = await import("../lib/claude");
+    let event = await generateContentForDate(monthName, day);
 
     await storeEvent(month + 1, day, displayDate, event);
     await pushToTrmnl(event, displayDate);
