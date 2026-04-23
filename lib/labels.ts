@@ -22,6 +22,7 @@ export interface ApiEvent {
   generated_at: string;
   original_text?: string;
   original_language?: string;
+  original_attribution?: string;
 }
 
 export function toApiResponse(event: StoredEvent): ApiEvent {
@@ -37,5 +38,6 @@ export function toApiResponse(event: StoredEvent): ApiEvent {
     generated_at: event.generatedAt,
     original_text: event.originalText,
     original_language: event.originalLanguage,
+    original_attribution: event.originalAttribution,
   };
 }

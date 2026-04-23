@@ -35,7 +35,14 @@
         $original.textContent = data.original_text;
         $original.hidden = false;
         var $origLang = document.getElementById("original-language");
-        if ($origLang) $origLang.textContent = "\u2014 " + data.original_language;
+        if ($origLang) {
+          // Show attribution (author name) if available, with language in parentheses
+          if (data.original_attribution) {
+            $origLang.textContent = "\u2014 " + data.original_attribution + " (" + data.original_language + ")";
+          } else {
+            $origLang.textContent = "\u2014 " + data.original_language;
+          }
+        }
       }
     }
     var timeEl = document.getElementById("display-date");
