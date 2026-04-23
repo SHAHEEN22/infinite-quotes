@@ -28,8 +28,8 @@
     document.getElementById("headline").textContent = data.headline;
     document.getElementById("summary").textContent = data.summary;
 
-    // Display original language text if available and different from headline
-    if (data.original_text && data.original_language) {
+    // Display original language text if available and not English (avoid duplicating the headline)
+    if (data.original_text && data.original_language && data.original_language.toLowerCase() !== "english") {
       var $original = document.getElementById("original-text");
       if ($original) {
         $original.textContent = data.original_text;
