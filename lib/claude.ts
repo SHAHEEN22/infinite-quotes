@@ -98,7 +98,7 @@ Respond with ONLY a JSON object in this exact format (no markdown, no extra text
   "original_attribution": "The name of the person who ORIGINALLY said or wrote the quote, e.g. Socrates, Albert Camus, Seneca"
 }
 
-IMPORTANT: Only attribute the quote to someone who ORIGINALLY said or wrote it. Do not attribute a quote to someone who merely discussed, referenced, or quoted it in their own work.
+Prefer quotes the person originally said or wrote, rather than ones they merely referenced. Always respond with valid JSON.
 
 Category guide:
 - philosophy: philosophical concepts, epistemology, metaphysics
@@ -180,7 +180,7 @@ const FALLBACK_PROMPTS: Record<FallbackContentType, (monthName: string, day: num
   greek_philosopher: (monthName, day) =>
     `Share a profound quote from an ancient Greek philosopher (Socrates, Plato, Aristotle, Epictetus, Marcus Aurelius, Seneca, etc.). Include the original context and why this idea endures.
 
-IMPORTANT: Only use quotes that this philosopher ORIGINALLY said or wrote. Do not use quotes they merely discussed, referenced, or attributed to others.
+Prefer quotes this philosopher originally said or wrote. Always respond with valid JSON, never conversational text.
 
 Respond with ONLY a JSON object:
 {
@@ -198,7 +198,7 @@ Choose based on today's date (${monthName} ${day}) for deterministic variety.`,
   german_philosopher: (monthName, day) =>
     `Share a thought-provoking quote from a German philosopher (16th-20th century: Kant, Hegel, Nietzsche, Schopenhauer, Heidegger, Marx, Leibniz, etc.). Provide context about the work it comes from.
 
-IMPORTANT: Only use quotes that this philosopher ORIGINALLY said or wrote. Do not use quotes they merely discussed, referenced, or attributed to others.
+Prefer quotes this philosopher originally said or wrote. Always respond with valid JSON, never conversational text.
 
 Respond with ONLY a JSON object:
 {
@@ -216,7 +216,7 @@ Choose based on today's date (${monthName} ${day}) for variety.`,
   french_philosopher: (monthName, day) =>
     `Share an insightful quote from a French philosopher (16th-20th century: Descartes, Voltaire, Rousseau, Montaigne, Pascal, Sartre, Camus, de Beauvoir, Foucault, etc.). Explain its philosophical significance.
 
-IMPORTANT: Only use quotes that this philosopher ORIGINALLY said or wrote. Do not use quotes they merely discussed, referenced, or attributed to others.
+Prefer quotes this philosopher originally said or wrote. Always respond with valid JSON, never conversational text.
 
 Respond with ONLY a JSON object:
 {
@@ -234,7 +234,7 @@ Choose based on today's date (${monthName} ${day}) for variety.`,
   fiction_author: (monthName, day) =>
     `Share a memorable quote from a famous fiction author (English, French, or German: Shakespeare, Dickens, Austen, Wilde, Orwell, Tolkien, Hugo, Flaubert, Proust, Goethe, Kafka, Mann, Hesse, etc.). Explain the work it comes from and its literary significance.
 
-IMPORTANT: Only use quotes that this author ORIGINALLY wrote. Do not use quotes they merely discussed, referenced, or attributed to others.
+Prefer quotes this author originally wrote. Always respond with valid JSON, never conversational text.
 
 Respond with ONLY a JSON object:
 {
@@ -252,7 +252,7 @@ Choose based on today's date (${monthName} ${day}) for variety.`,
   classical_author: (monthName, day) =>
     `Share a timeless quote from an ancient Greek or Roman author (Homer, Sophocles, Virgil, Ovid, Horace, Cicero, Plutarch, etc.). Provide context about the original work.
 
-IMPORTANT: Only use quotes that this author ORIGINALLY wrote. Do not use quotes they merely discussed, referenced, or attributed to others. For example, do not attribute "Know thyself" to Plutarch \u2014 he wrote about it, but it is a Delphic maxim.
+Prefer quotes this author originally wrote. Always respond with valid JSON, never conversational text.
 
 Respond with ONLY a JSON object:
 {
@@ -388,7 +388,7 @@ export async function generateContentForDate(
 
 Context: ${topic.description}
 
-IMPORTANT: Only use a quote that ${topic.name} ORIGINALLY said or wrote. Do not use quotes they merely discussed, referenced, or attributed to others.
+Prefer a quote that ${topic.name} originally said or wrote. Always respond with valid JSON, never conversational text.
 
 Respond with ONLY a JSON object:
 {
