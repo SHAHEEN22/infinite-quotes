@@ -28,23 +28,19 @@
     document.getElementById("headline").textContent = data.headline;
     document.getElementById("summary").textContent = data.summary;
 
-    // Display original language text if available, not English, and actually non-English text
+    // Show original language blockquote only if genuinely non-English text
     var looksNonEnglish = data.original_text && data.original_text.split("").some(function(c) { var code = c.charCodeAt(0); return (code >= 0xC0 && code <= 0x24F) || (code >= 0x370 && code <= 0x3FF) || (code >= 0x400 && code <= 0x4FF) || (code >= 0x1F00 && code <= 0x1FFF); });
-    if (data.original_text && data.original_language && data.original_language.toLowerCase() !== "english" && looksNonEnglish) {
+    if (looksNonEnglish && data.original_language && data.original_language.toLowerCase() !== "english") {
       var $original = document.getElementById("original-text");
       if ($original) {
         $original.textContent = data.original_text;
         $original.hidden = false;
-        var $origLang = document.getElementById("original-language");
-        if ($origLang) {
-          // Show attribution (author name) if available
-          if (data.original_attribution) {
-            $origLang.textContent = "\u2014 " + data.original_attribution;
-          } else {
-            $origLang.textContent = "\u2014 " + data.original_language;
-          }
-        }
       }
+    }
+    // Always show attribution if available
+    var $origLang = document.getElementById("original-language");
+    if ($origLang && data.original_attribution) {
+      $origLang.textContent = "\u2014 " + data.original_attribution;
     }
     var timeEl = document.getElementById("display-date");
     timeEl.textContent = data.display_date;
