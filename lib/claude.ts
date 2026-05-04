@@ -34,6 +34,7 @@ export interface ParanormalEvent {
   tags: string[];
   originalText?: string;
   originalLanguage?: string;
+  originalAttribution?: string;
 }
 
 const VALID_CATEGORIES: Set<string> = new Set<string>([
@@ -93,8 +94,11 @@ Respond with ONLY a JSON object in this exact format (no markdown, no extra text
   "category": "one of: ${CATEGORY_LIST}",
   "tags": ["1-2 lowercase topic tags for deduplication, e.g. stoicism, existentialism"],
   "original_text": "The quote written ONLY in its original language — the actual Ancient Greek, Latin, German, or French words. Never include English translations here. If the quote was originally in English, leave this empty.",
-  "original_language": "The single original language name, e.g. Ancient Greek, Latin, German, French"
+  "original_language": "The single original language name, e.g. Ancient Greek, Latin, German, French",
+  "original_attribution": "Full name of the person who said/wrote this quote, e.g. Socrates, Albert Camus, Seneca"
 }
+
+Prefer quotes the person originally said or wrote. Always respond with valid JSON.
 
 Category guide:
 - philosophy: philosophical concepts, epistemology, metaphysics
@@ -126,6 +130,7 @@ ${snippets}`,
       tags?: string[];
       original_text?: string;
       original_language?: string;
+      original_attribution?: string;
     };
     if (!parsed.headline || !parsed.summary || !parsed.year) return null;
     const category = validCategory(parsed.category);
@@ -141,6 +146,7 @@ ${snippets}`,
       tags,
       originalText: parsed.original_text,
       originalLanguage: parsed.original_language,
+      originalAttribution: parsed.original_attribution,
     };
   } catch {
     console.error("[claude] Failed to parse quote JSON:", raw.slice(0, 200));
@@ -181,7 +187,8 @@ Respond with ONLY a JSON object:
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
   "original_text": "The quote ONLY in its original language — the actual Ancient Greek or Latin words, no English. If originally English, leave empty.",
-  "original_language": "The single original language, e.g. Ancient Greek, Latin"
+  "original_language": "The single original language, e.g. Ancient Greek, Latin",
+  "original_attribution": "Full name of the person who said/wrote this quote"
 }
 
 Choose based on today's date (${monthName} ${day}) for deterministic variety.`,
@@ -196,7 +203,8 @@ Respond with ONLY a JSON object:
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
   "original_text": "The quote written ONLY in German — the actual German words, no English translation.",
-  "original_language": "German"
+  "original_language": "German",
+  "original_attribution": "Full name of the person who said/wrote this quote"
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
@@ -211,7 +219,8 @@ Respond with ONLY a JSON object:
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
   "original_text": "The quote written ONLY in French — the actual French words, no English translation.",
-  "original_language": "French"
+  "original_language": "French",
+  "original_attribution": "Full name of the person who said/wrote this quote"
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
@@ -226,7 +235,8 @@ Respond with ONLY a JSON object:
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
   "original_text": "The quote ONLY in its original language — the actual French, German, etc. words. No English. If originally English, leave empty.",
-  "original_language": "The single original language, e.g. English, French, German"
+  "original_language": "The single original language, e.g. English, French, German",
+  "original_attribution": "Full name of the person who wrote this quote"
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
@@ -241,7 +251,8 @@ Respond with ONLY a JSON object:
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
   "original_text": "The quote ONLY in its original language — the actual Ancient Greek or Latin words, no English. If originally English, leave empty.",
-  "original_language": "The single original language, e.g. Ancient Greek, Latin"
+  "original_language": "The single original language, e.g. Ancient Greek, Latin",
+  "original_attribution": "Full name of the person who wrote this quote"
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
@@ -276,6 +287,7 @@ export async function generateFallbackContent(
       category?: string;
       original_text?: string;
       original_language?: string;
+      original_attribution?: string;
     };
     if (!parsed.headline || !parsed.summary) {
       console.error("[claude] Fallback missing fields:", text.slice(0, 200));
@@ -290,6 +302,7 @@ export async function generateFallbackContent(
       tags: [],
       originalText: parsed.original_text,
       originalLanguage: parsed.original_language,
+      originalAttribution: parsed.original_attribution,
     };
   } catch {
     console.error("[claude] Failed to parse fallback JSON:", raw.slice(0, 200));
@@ -372,7 +385,8 @@ Respond with ONLY a JSON object:
   "category": "one of: ${CATEGORY_LIST}",
   "tags": ${JSON.stringify(topic.tags)},
   "original_text": "The quote ONLY in its original language — actual Greek, Latin, German, or French words. No English. If originally English, leave empty.",
-  "original_language": "The single original language, e.g. Ancient Greek, Latin, German, French"
+  "original_language": "The single original language, e.g. Ancient Greek, Latin, German, French",
+  "original_attribution": "Full name of the person who said/wrote this quote, e.g. ${topic.name}"
 }`,
     }],
   });
@@ -389,6 +403,7 @@ Respond with ONLY a JSON object:
       tags?: string[];
       original_text?: string;
       original_language?: string;
+      original_attribution?: string;
     };
     if (!parsed.headline || !parsed.summary) {
       return fallbackDefault(fallbackType);
@@ -402,6 +417,7 @@ Respond with ONLY a JSON object:
       tags: parsed.tags ?? topic.tags,
       originalText: parsed.original_text,
       originalLanguage: parsed.original_language,
+      originalAttribution: parsed.original_attribution,
     };
   } catch {
     console.error("[claude] Failed to parse curated fallback JSON:", raw.slice(0, 200));
