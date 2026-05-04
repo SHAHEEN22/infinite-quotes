@@ -28,8 +28,9 @@
     document.getElementById("headline").textContent = data.headline;
     document.getElementById("summary").textContent = data.summary;
 
-    // Display original language text if available and not English (avoid duplicating the headline)
-    if (data.original_text && data.original_language && data.original_language.toLowerCase() !== "english") {
+    // Display original language text if available, not English, and actually non-English text
+    var looksNonEnglish = data.original_text && data.original_text.split("").some(function(c) { var code = c.charCodeAt(0); return (code >= 0xC0 && code <= 0x24F) || code >= 0x370; });
+    if (data.original_text && data.original_language && data.original_language.toLowerCase() !== "english" && looksNonEnglish) {
       var $original = document.getElementById("original-text");
       if ($original) {
         $original.textContent = data.original_text;
