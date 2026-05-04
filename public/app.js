@@ -29,7 +29,7 @@
     document.getElementById("summary").textContent = data.summary;
 
     // Display original language text if available, not English, and actually non-English text
-    var looksNonEnglish = data.original_text && data.original_text.split("").some(function(c) { var code = c.charCodeAt(0); return (code >= 0xC0 && code <= 0x24F) || code >= 0x370; });
+    var looksNonEnglish = data.original_text && data.original_text.split("").some(function(c) { var code = c.charCodeAt(0); return (code >= 0xC0 && code <= 0x24F) || (code >= 0x370 && code <= 0x3FF) || (code >= 0x400 && code <= 0x4FF) || (code >= 0x1F00 && code <= 0x1FFF); });
     if (data.original_text && data.original_language && data.original_language.toLowerCase() !== "english" && looksNonEnglish) {
       var $original = document.getElementById("original-text");
       if ($original) {
