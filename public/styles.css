@@ -81,6 +81,15 @@ header {
   border-bottom: 1px solid var(--border);
 }
 
+.site-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  margin-bottom: 0.6rem;
+  opacity: 0.85;
+  filter: var(--icon-filter);
+}
+
 h1 {
   font-size: 1.75rem;
   letter-spacing: 0.08em;
