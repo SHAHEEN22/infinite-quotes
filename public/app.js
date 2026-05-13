@@ -28,9 +28,9 @@
     document.getElementById("headline").textContent = data.headline;
     document.getElementById("summary").textContent = data.summary;
 
-    // Show original language blockquote only if genuinely non-English text
-    var looksNonEnglish = data.original_text && data.original_text.split("").some(function(c) { var code = c.charCodeAt(0); return (code >= 0xC0 && code <= 0x24F) || (code >= 0x370 && code <= 0x3FF) || (code >= 0x400 && code <= 0x4FF) || (code >= 0x1F00 && code <= 0x1FFF); });
-    if (looksNonEnglish && data.original_language && data.original_language.toLowerCase() !== "english") {
+    // Show original language blockquote if we have non-English original text
+    var hasOriginal = data.original_text && data.original_text.trim().length > 0;
+    if (hasOriginal && data.original_language && data.original_language.toLowerCase() !== "english") {
       var $original = document.getElementById("original-text");
       if ($original) {
         $original.textContent = data.original_text;
