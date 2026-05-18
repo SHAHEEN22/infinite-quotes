@@ -293,7 +293,7 @@ export async function generateFallbackContent(
       console.error("[claude] Fallback missing fields:", text.slice(0, 200));
       return fallbackDefault(fallbackType);
     }
-        return ensureOriginalText({})
+            return ensureOriginalText({
       headline: parsed.headline,
       summary: parsed.summary,
       year: parsed.year ?? "—",
