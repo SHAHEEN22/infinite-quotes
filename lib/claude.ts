@@ -293,7 +293,7 @@ export async function generateFallbackContent(
       console.error("[claude] Fallback missing fields:", text.slice(0, 200));
       return fallbackDefault(fallbackType);
     }
-    return {
+        return ensureOriginalText({})
       headline: parsed.headline,
       summary: parsed.summary,
       year: parsed.year ?? "—",
@@ -303,7 +303,7 @@ export async function generateFallbackContent(
       originalText: parsed.original_text,
       originalLanguage: parsed.original_language,
       originalAttribution: parsed.original_attribution,
-    };
+  });
   } catch {
     console.error("[claude] Failed to parse fallback JSON:", raw.slice(0, 200));
     return fallbackDefault(fallbackType);
@@ -320,6 +320,33 @@ function fallbackDefault(contentType: ContentType): ParanormalEvent {
     tags: [],
   };
 }
+
+async function ensureOriginalText(event: ParanormalEvent): Promise<ParanormalEvent> {
+  // Skip if already has original text, or if originally in English
+    if (event.originalText && event.originalText.trim().length > 0) return event;
+      if (!event.originalLanguage || event.originalLanguage.toLowerCase() === "english") return event;
+
+        try {
+            const response = await client.messages.create({
+                  model: "claude-haiku-4-5",
+                        max_tokens: 256,
+                              messages: [{
+                                      role: "user",
+                                              content: `Provide the original ${event.originalLanguage} text for this quote attributed to ${event.originalAttribution || "unknown"}:\n\n"${event.headline}"\n\nRespond with ONLY the quote in ${event.originalLanguage}. No English, no translation, no explanation, no quotation marks. Just the original words. If the exact original cannot be sourced, provide a faithful rendering in ${event.originalLanguage} that captures the same meaning.`,
+                                                    }],
+                                                        });
+
+                                                            const text = response.content[0].type === "text" ? response.content[0].text.trim() : "";
+                                                                if (text.length > 0) {
+                                                                      event.originalText = text;
+                                                                            console.log(`[claude] Repaired original text for ${event.originalAttribution} (${event.originalLanguage})`);
+                                                                                }
+                                                                                  } catch (err) {
+                                                                                      console.error("[claude] Failed to repair original text:", err instanceof Error ? err.message : String(err));
+                                                                                        }
+
+                                                                                          return event;
+                                                                                          }
 
 export async function generateContentForDate(
   monthName: string,
@@ -408,7 +435,7 @@ Respond with ONLY a JSON object:
     if (!parsed.headline || !parsed.summary) {
       return fallbackDefault(fallbackType);
     }
-    return {
+        return ensureOriginalText({
       headline: parsed.headline,
       summary: parsed.summary,
       year: parsed.year ?? "—",
@@ -418,7 +445,7 @@ Respond with ONLY a JSON object:
       originalText: parsed.original_text,
       originalLanguage: parsed.original_language,
       originalAttribution: parsed.original_attribution,
-    };
+        });
   } catch {
     console.error("[claude] Failed to parse curated fallback JSON:", raw.slice(0, 200));
     return fallbackDefault(fallbackType);
