@@ -293,7 +293,7 @@ export async function generateFallbackContent(
       console.error("[claude] Fallback missing fields:", text.slice(0, 200));
       return fallbackDefault(fallbackType);
     }
-            return ensureOriginalText({
+    return ensureOriginalText({
       headline: parsed.headline,
       summary: parsed.summary,
       year: parsed.year ?? "—",
@@ -303,7 +303,7 @@ export async function generateFallbackContent(
       originalText: parsed.original_text,
       originalLanguage: parsed.original_language,
       originalAttribution: parsed.original_attribution,
-  });
+    });
   } catch {
     console.error("[claude] Failed to parse fallback JSON:", raw.slice(0, 200));
     return fallbackDefault(fallbackType);
@@ -321,32 +321,81 @@ function fallbackDefault(contentType: ContentType): ParanormalEvent {
   };
 }
 
+/** Check if text actually contains characters from the claimed original language.
+ *  Catches cases where Claude returns English text but labels it as Greek, etc. */
+function textMatchesLanguage(text: string, language: string): boolean {
+  const lang = language.toLowerCase();
+  // For non-Latin-script languages, verify expected characters are present
+  if (lang.includes('greek')) {
+    // Greek Unicode: U+0370-U+03FF (Greek and Coptic), U+1F00-U+1FFF (Extended Greek)
+    return /[Ͱ-Ͽἀ-῿]/.test(text);
+  }
+  if (lang.includes('arabic') || lang.includes('persian')) {
+    return /[؀-ۿ]/.test(text);
+  }
+  if (lang.includes('chinese') || lang.includes('mandarin')) {
+    return /[一-鿿]/.test(text);
+  }
+  if (lang.includes('japanese')) {
+    return /[぀-ゟ゠-ヿ一-鿿]/.test(text);
+  }
+  if (lang.includes('korean')) {
+    return /[가-힯]/.test(text);
+  }
+  if (lang.includes('russian') || lang.includes('cyrillic')) {
+    return /[Ѐ-ӿ]/.test(text);
+  }
+  if (lang.includes('hebrew')) {
+    return /[֐-׿]/.test(text);
+  }
+  if (lang.includes('sanskrit') || lang.includes('hindi') || lang.includes('devanagari')) {
+    return /[ऀ-ॿ]/.test(text);
+  }
+  // For Latin-script languages, check for language-specific markers
+  if (lang === 'german') {
+    return /[äöüßÄÖÜ]/.test(text);
+  }
+  if (lang === 'french') {
+    return /[àâæçéèêëîïôœùûüÿ]/i.test(text);
+  }
+  // For Latin and others, accept as-is since hard to distinguish from English
+  return true;
+}
+
 async function ensureOriginalText(event: ParanormalEvent): Promise<ParanormalEvent> {
-  // Skip if already has original text, or if originally in English
-    if (event.originalText && event.originalText.trim().length > 0) return event;
-      if (!event.originalLanguage || event.originalLanguage.toLowerCase() === "english") return event;
+  // Skip if originally in English
+  if (!event.originalLanguage || event.originalLanguage.toLowerCase() === "english") return event;
 
-        try {
-            const response = await client.messages.create({
-                  model: "claude-haiku-4-5",
-                        max_tokens: 256,
-                              messages: [{
-                                      role: "user",
-                                              content: `Provide the original ${event.originalLanguage} text for this quote attributed to ${event.originalAttribution || "unknown"}:\n\n"${event.headline}"\n\nRespond with ONLY the quote in ${event.originalLanguage}. No English, no translation, no explanation, no quotation marks. Just the original words. If the exact original cannot be sourced, provide a faithful rendering in ${event.originalLanguage} that captures the same meaning.`,
-                                                    }],
-                                                        });
+  // Skip if already has original text that actually matches the claimed language
+  // (catches cases where Claude puts English translation in the original_text field)
+  if (event.originalText && event.originalText.trim().length > 0 && textMatchesLanguage(event.originalText, event.originalLanguage)) return event;
 
-                                                            const text = response.content[0].type === "text" ? response.content[0].text.trim() : "";
-                                                                if (text.length > 0) {
-                                                                      event.originalText = text;
-                                                                            console.log(`[claude] Repaired original text for ${event.originalAttribution} (${event.originalLanguage})`);
-                                                                                }
-                                                                                  } catch (err) {
-                                                                                      console.error("[claude] Failed to repair original text:", err instanceof Error ? err.message : String(err));
-                                                                                        }
+  // Log when we detect English text masquerading as original language
+  if (event.originalText && event.originalText.trim().length > 0) {
+    console.log(`[claude] Detected English text in original_text field for ${event.originalLanguage} — regenerating`);
+  }
 
-                                                                                          return event;
-                                                                                          }
+  try {
+    const response = await client.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 256,
+      messages: [{
+        role: "user",
+        content: `Provide the original ${event.originalLanguage} text for this quote attributed to ${event.originalAttribution || "unknown"}:\n\n"${event.headline}"\n\nRespond with ONLY the quote in ${event.originalLanguage}. No English, no translation, no explanation, no quotation marks. Just the original words. If the exact original cannot be sourced, provide a faithful rendering in ${event.originalLanguage} that captures the same meaning.`,
+      }],
+    });
+
+    const text = response.content[0].type === "text" ? response.content[0].text.trim() : "";
+    if (text.length > 0) {
+      event.originalText = text;
+      console.log(`[claude] Repaired original text for ${event.originalAttribution} (${event.originalLanguage})`);
+    }
+  } catch (err) {
+    console.error("[claude] Failed to repair original text:", err instanceof Error ? err.message : String(err));
+  }
+
+  return event;
+}
 
 export async function generateContentForDate(
   monthName: string,
@@ -435,7 +484,7 @@ Respond with ONLY a JSON object:
     if (!parsed.headline || !parsed.summary) {
       return fallbackDefault(fallbackType);
     }
-        return ensureOriginalText({
+    return ensureOriginalText({
       headline: parsed.headline,
       summary: parsed.summary,
       year: parsed.year ?? "—",
@@ -445,7 +494,7 @@ Respond with ONLY a JSON object:
       originalText: parsed.original_text,
       originalLanguage: parsed.original_language,
       originalAttribution: parsed.original_attribution,
-        });
+    });
   } catch {
     console.error("[claude] Failed to parse curated fallback JSON:", raw.slice(0, 200));
     return fallbackDefault(fallbackType);
