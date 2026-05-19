@@ -386,9 +386,14 @@ async function ensureOriginalText(event: ParanormalEvent): Promise<ParanormalEve
     });
 
     const text = response.content[0].type === "text" ? response.content[0].text.trim() : "";
-    if (text.length > 0) {
+    if (text.length > 0 && textMatchesLanguage(text, event.originalLanguage)) {
       event.originalText = text;
       console.log(`[claude] Repaired original text for ${event.originalAttribution} (${event.originalLanguage})`);
+    } else if (text.length > 0) {
+      // Claude returned English explanation/refusal instead of original language text — clear it
+      console.log(`[claude] Claude returned non-${event.originalLanguage} text for repair — clearing original_text to prevent displaying refusal`);
+      event.originalText = "";
+      event.originalLanguage = "";
     }
   } catch (err) {
     console.error("[claude] Failed to repair original text:", err instanceof Error ? err.message : String(err));
