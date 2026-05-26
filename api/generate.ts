@@ -112,7 +112,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // No queue entry â generate a random curated quote (not date-biased)
     console.log(`[generate] No queue entry for ${dateKey}, generating curated content`);
     const { generateContentForDate } = await import("../lib/claude");
-    let event = await generateContentForDate(monthName, day);
+    const { getNearbyTags } = await import("../lib/queue");
+    const nearbyTags = await getNearbyTags(dateKey);
+    let event = await generateContentForDate(monthName, day, nearbyTags);
 
     await storeEvent(month + 1, day, displayDate, event);
     await pushToTrmnl(event, displayDate);
