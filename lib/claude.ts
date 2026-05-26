@@ -408,6 +408,8 @@ export async function generateContentForDate(
   excludeTags: string[] = []
 ): Promise<ParanormalEvent> {
   const doy = dayOfYear(monthName, day);
+  const year = new Date().getFullYear();
+  const seed = doy + year * 7; // Vary rotation by year so same date picks different topics each year
   const monthNum = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
@@ -417,9 +419,9 @@ export async function generateContentForDate(
   // Pick a fallback type that hasn't been used recently
   const { getRecentContentTypes } = await import("./queue");
   const recentTypes = await getRecentContentTypes(dateKey);
-  let fallbackType = FALLBACK_TYPES[doy % FALLBACK_TYPES.length];
+  let fallbackType = FALLBACK_TYPES[seed % FALLBACK_TYPES.length];
   for (let i = 0; i < FALLBACK_TYPES.length; i++) {
-    const candidate = FALLBACK_TYPES[(doy + i) % FALLBACK_TYPES.length];
+    const candidate = FALLBACK_TYPES[(seed + i) % FALLBACK_TYPES.length];
     if (!recentTypes.includes(candidate)) {
       fallbackType = candidate;
       break;
@@ -435,7 +437,7 @@ export async function generateContentForDate(
   const excludeSet = new Set(excludeTags);
   let topic: TopicEntry | null = null;
   for (let i = 0; i < topics.length; i++) {
-    const candidate = topics[(doy + i) % topics.length];
+    const candidate = topics[(seed + i) % topics.length];
     const hasExcluded = candidate.tags.some(t => excludeSet.has(t));
     if (!hasExcluded) {
       topic = candidate;
@@ -448,10 +450,17 @@ export async function generateContentForDate(
     return generateFallbackContent(monthName, day);
   }
 
+  // Fetch recent headlines to avoid repeating the same quotes
+  const { getRecentHeadlines } = await import("./store");
+  const recentHeadlines = await getRecentHeadlines(30);
+  const recentExclusion = recentHeadlines.length > 0
+    ? `\n\nIMPORTANT: Do NOT repeat any of these recently shown quotes — pick something DIFFERENT:\n${recentHeadlines.map(h => `- "${h}"`).join("\n")}\n\nChoose a lesser-known or surprising quote instead.`
+    : "";
+
   const response = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 512,
-    system: `You are a curator for a daily philosophical and literary quotes feature. Your tone is thoughtful and appreciative — you share profound quotes that resonate across time.`,
+    system: `You are a curator for a daily philosophical and literary quotes feature. Your tone is thoughtful and appreciative — you share profound quotes that resonate across time. Select lesser-known or surprising quotes for maximum variety.`,
     messages: [{
       role: "user",
       content: `Share a famous quote from ${topic.name}:
@@ -468,7 +477,7 @@ Respond with ONLY a JSON object:
   "original_text": "The quote ONLY in its original language — actual Greek, Latin, German, or French words. No English. If originally English, leave empty.",
   "original_language": "The single original language, e.g. Ancient Greek, Latin, German, French",
   "original_attribution": "Full name of the person who said/wrote this quote, e.g. ${topic.name}"
-}`,
+}${recentExclusion}`,
     }],
   });
 
