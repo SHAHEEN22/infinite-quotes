@@ -561,6 +561,72 @@ export async function generateContentForDate(
     ? `\n\nIMPORTANT: Do NOT repeat any of these recently shown quotes — pick something DIFFERENT:\n${recentHeadlines.map(h => `- "${h}"`).join("\n")}\n\nChoose a lesser-known or surprising quote instead.`
     : "";
 
+  // PRIMARY PATH: Search Brave for real, sourced quotes from this philosopher
+  const { searchPhilosopherQuotes } = await import("./brave");
+  const searchResults = await searchPhilosopherQuotes(topic.name, topic.description);
+
+  if (searchResults.length > 0) {
+    console.log(`[claude] Found ${searchResults.length} Brave results for ${topic.name}, using search-based generation`);
+    const snippets = searchResults
+      .map((r, i) => `[${i + 1}] ${r.title}\n${r.description}`)
+      .join("\n\n");
+
+    const searchResponse = await client.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 512,
+      system: `You are a curator for a daily philosophical and literary quotes feature. CRITICAL RULES:\n1. Only select quotes that appear in the search results with a SPECIFIC, NAMED source work.\n2. Cite the exact source work in the summary.\n3. The original_text field MUST contain the actual words in the original language.\n4. Do NOT invent or paraphrase — use the actual quote from the search results.`,
+      messages: [{
+        role: "user",
+        content: `Based on the search results below about ${topic.name}, select a real quote with its verified source.
+
+Search results:
+${snippets}
+
+Respond with ONLY a JSON object:
+{
+  "headline": "The quote in English (max 15 words). MUST be in English.",
+  "summary": "2-4 sentences: the source work (book, chapter, section), context, and why it endures.",
+  "year": "4-digit year",
+  "category": "one of: ${CATEGORY_LIST}",
+  "tags": ${JSON.stringify(topic.tags)},
+  "original_text": "The quote ONLY in its original language. REQUIRED for non-English sources.",
+  "original_language": "The original language",
+  "original_attribution": "${topic.name}",
+  "source_work": "The specific work and section. REQUIRED."
+}${recentExclusion}`,
+      }],
+    });
+
+    const searchRaw = searchResponse.content[0].type === "text" ? searchResponse.content[0].text.trim() : "";
+    const searchText = extractJson(searchRaw);
+    try {
+      const parsed = JSON.parse(searchText) as {
+        headline?: string; summary?: string; year?: string; category?: string;
+        tags?: string[]; original_text?: string; original_language?: string;
+        original_attribution?: string; source_work?: string;
+      };
+      if (parsed.headline && parsed.summary) {
+        console.log(`[claude] Search-based quote: "${parsed.headline}" (source: ${parsed.source_work || "unknown"})`);
+        return ensureOriginalText({
+          headline: parsed.headline,
+          summary: parsed.summary,
+          year: parsed.year ?? "—",
+          category: validCategory(parsed.category),
+          contentType: fallbackType,
+          tags: parsed.tags ?? topic.tags,
+          originalText: parsed.original_text,
+          originalLanguage: parsed.original_language,
+          originalAttribution: parsed.original_attribution,
+        });
+      }
+    } catch {
+      console.warn("[claude] Failed to parse search-based quote, falling back to direct generation");
+    }
+  } else {
+    console.log(`[claude] No Brave results for ${topic.name}, using direct generation`);
+  }
+
+  // FALLBACK: Direct Claude generation (only if Brave search returned nothing useful)
   const response = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 512,
