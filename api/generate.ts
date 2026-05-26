@@ -1,8 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
   type ParanormalEvent,
+  validateQuote,
 } from "../lib/claude";
-import { storeEvent } from "../lib/store";
+import { storeEvent, getRecentHeadlines } from "../lib/store";
 import { getQueueEntry, deleteQueueEntry } from "../lib/queue";
 import { LABELS } from "../lib/labels";
 
@@ -114,16 +115,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { generateContentForDate } = await import("../lib/claude");
     const { getNearbyTags } = await import("../lib/queue");
     const nearbyTags = await getNearbyTags(dateKey);
-    let event = await generateContentForDate(monthName, day, nearbyTags);
+    const recentHeadlines = await getRecentHeadlines(30);
 
-    await storeEvent(month + 1, day, displayDate, event);
-    await pushToTrmnl(event, displayDate);
+    // Retry loop: validate each generated quote, retry up to 3 times on failure
+    const MAX_RETRIES = 3;
+    let event: ParanormalEvent | null = null;
+    let lastValidation: { valid: boolean; reasons: string[] } | null = null;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      const candidate = await generateContentForDate(monthName, day, nearbyTags);
+      const validation = validateQuote(candidate, recentHeadlines);
+
+      if (validation.valid) {
+        event = candidate;
+        console.log(`[generate] Quote passed validation on attempt ${attempt}`);
+        break;
+      }
+
+      console.warn(`[generate] Attempt ${attempt}/${MAX_RETRIES} failed validation: ${validation.reasons.join(", ")}`);
+      lastValidation = validation;
+
+      if (attempt === MAX_RETRIES) {
+        console.warn("[generate] All retries exhausted, applying auto-fixes to last candidate");
+        if (
+          candidate.originalText &&
+          candidate.originalLanguage &&
+          validation.reasons.some(r => r.includes("originalText"))
+        ) {
+          candidate.originalText = "";
+          candidate.originalLanguage = "";
+        }
+        event = candidate;
+      }
+    }
+
+    await storeEvent(month + 1, day, displayDate, event!);
+    await pushToTrmnl(event!, displayDate);
 
     return res.status(200).json({
       success: true,
       date: displayDate,
       source: "live",
-      event,
+      event: event!,
+      validated: true,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
