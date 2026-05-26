@@ -71,7 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Cache-Control", "public, max-age=3600");
+        res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=60");
         return res.status(200).json(toApiResponse(event));
   } catch (err) {
         console.error("[today] error:", err instanceof Error ? err.message : String(err));
