@@ -362,6 +362,106 @@ function textMatchesLanguage(text: string, language: string): boolean {
   return true;
 }
 
+/** Validation result for generated quotes */
+export interface ValidationResult {
+  valid: boolean;
+  reasons: string[];
+}
+
+/** Patterns that indicate Claude returned a refusal instead of content */
+const REFUSAL_PATTERNS = [
+  /\bI cannot\b/i,
+  /\bI can't\b/i,
+  /\bI'm unable\b/i,
+  /\bI am unable\b/i,
+  /\bI don't have\b/i,
+  /\bI do not have\b/i,
+  /\bunable to provide\b/i,
+  /\bcannot provide\b/i,
+  /\bI apologize\b/i,
+  /\bI'm sorry\b/i,
+  /\bas an AI\b/i,
+  /\bI should note\b/i,
+  /\bI need to clarify\b/i,
+];
+
+/** Validate a generated quote before storing it in KV */
+export function validateQuote(
+  event: ParanormalEvent,
+  recentHeadlines: string[] = []
+): ValidationResult {
+  const reasons: string[] = [];
+
+  // 1. Required fields must be non-empty
+  if (!event.headline || event.headline.trim().length === 0) {
+    reasons.push("headline is empty");
+  }
+  if (!event.summary || event.summary.trim().length === 0) {
+    reasons.push("summary is empty");
+  }
+  if (!event.year || event.year.trim().length === 0) {
+    reasons.push("year is empty");
+  }
+
+  // 2. Check for Claude refusal patterns in headline and summary
+  for (const pattern of REFUSAL_PATTERNS) {
+    if (event.headline && pattern.test(event.headline)) {
+      reasons.push("headline contains refusal pattern: " + pattern.source);
+      break;
+    }
+  }
+  for (const pattern of REFUSAL_PATTERNS) {
+    if (event.summary && pattern.test(event.summary)) {
+      reasons.push("summary contains refusal pattern: " + pattern.source);
+      break;
+    }
+  }
+
+  // 3. Check originalText matches claimed language (if present)
+  if (
+    event.originalText &&
+    event.originalText.trim().length > 0 &&
+    event.originalLanguage &&
+    event.originalLanguage.toLowerCase() !== "english"
+  ) {
+    if (!textMatchesLanguage(event.originalText, event.originalLanguage)) {
+      reasons.push("originalText doesn't match claimed language: " + event.originalLanguage);
+    }
+    for (const pattern of REFUSAL_PATTERNS) {
+      if (pattern.test(event.originalText)) {
+        reasons.push("originalText contains refusal pattern");
+        break;
+      }
+    }
+  }
+
+  // 4. Duplicate headline check
+  if (event.headline && recentHeadlines.length > 0) {
+    const normalizedHeadline = event.headline.toLowerCase().trim();
+    const isDuplicate = recentHeadlines.some(
+      (h) => h.toLowerCase().trim() === normalizedHeadline
+    );
+    if (isDuplicate) {
+      reasons.push("headline is a duplicate of a recent quote");
+    }
+  }
+
+  // 5. Headline length sanity check
+  if (event.headline && event.headline.split(/\s+/).length > 25) {
+    reasons.push("headline is too long (over 25 words)");
+  }
+
+  // 6. Category must be valid
+  if (!VALID_CATEGORIES.has(event.category)) {
+    reasons.push("invalid category: " + event.category);
+  }
+
+  return {
+    valid: reasons.length === 0,
+    reasons,
+  };
+}
+
 async function ensureOriginalText(event: ParanormalEvent): Promise<ParanormalEvent> {
   // Skip if originally in English
   if (!event.originalLanguage || event.originalLanguage.toLowerCase() === "english") return event;
