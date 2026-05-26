@@ -516,12 +516,12 @@ export async function generateContentForDate(
   ].indexOf(monthName) + 1;
   const dateKey = `${String(monthNum).padStart(2, "0")}${String(day).padStart(2, "0")}`;
 
-  // Pick a fallback type that hasn't been used recently
+  // Pick a random fallback type, avoiding recently used types
   const { getRecentContentTypes } = await import("./queue");
   const recentTypes = await getRecentContentTypes(dateKey);
-  let fallbackType = FALLBACK_TYPES[seed % FALLBACK_TYPES.length];
-  for (let i = 0; i < FALLBACK_TYPES.length; i++) {
-    const candidate = FALLBACK_TYPES[(seed + i) % FALLBACK_TYPES.length];
+  const shuffledTypes = [...FALLBACK_TYPES].sort(() => Math.random() - 0.5);
+  let fallbackType = shuffledTypes[0]; // random default
+  for (const candidate of shuffledTypes) {
     if (!recentTypes.includes(candidate)) {
       fallbackType = candidate;
       break;
@@ -533,11 +533,11 @@ export async function generateContentForDate(
     return generateFallbackContent(monthName, day);
   }
 
-  // Pick a topic, rotating by day-of-year, skipping excluded tags
+  // Pick a random topic, skipping excluded tags
   const excludeSet = new Set(excludeTags);
+  const shuffledTopics = [...topics].sort(() => Math.random() - 0.5);
   let topic: TopicEntry | null = null;
-  for (let i = 0; i < topics.length; i++) {
-    const candidate = topics[(seed + i) % topics.length];
+  for (const candidate of shuffledTopics) {
     const hasExcluded = candidate.tags.some(t => excludeSet.has(t));
     if (!hasExcluded) {
       topic = candidate;
