@@ -80,7 +80,7 @@ export async function summarizeQuote(
   const response = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 512,
-    system: `You are a curator for a daily philosophical and literary quotes feature. You select profound, thought-provoking quotes from great philosophers and authors throughout history, providing context about the thinker and the significance of their words.`,
+    system: `You are a curator for a daily philosophical and literary quotes feature. You select quotes from great philosophers and authors. CRITICAL: Only use quotes from a SPECIFIC, NAMED work (book, dialogue, letter, essay). Cite the source in the summary. Never use internet-attributed or apocryphal quotes.`,
     messages: [
       {
         role: "user",
@@ -178,7 +178,7 @@ type FallbackContentType = Exclude<ContentType, "event">;
 
 const FALLBACK_PROMPTS: Record<FallbackContentType, (monthName: string, day: number) => string> = {
   greek_philosopher: (monthName, day) =>
-    `Share a profound quote from an ancient Greek philosopher (Socrates, Plato, Aristotle, Epictetus, Marcus Aurelius, Seneca, etc.). Include the original context and why this idea endures.
+    `Share a quote from an ancient Greek or Roman philosopher that comes from a SPECIFIC, NAMED work. You must be able to cite the exact source (e.g. Plato's Republic Book VII, Aristotle's Nicomachean Ethics Book II, Marcus Aurelius' Meditations Book IV, Epictetus' Discourses Book I, Seneca's Epistulae Morales 47). Do NOT use internet-attributed quotes or sayings without a verifiable textual source. The original_text field MUST contain the actual Ancient Greek or Latin words.
 
 Respond with ONLY a JSON object:
 {
@@ -188,13 +188,14 @@ Respond with ONLY a JSON object:
   "category": "one of: ${CATEGORY_LIST}",
   "original_text": "The quote ONLY in its original language — the actual Ancient Greek or Latin words, no English. If originally English, leave empty.",
   "original_language": "The single original language, e.g. Ancient Greek, Latin",
-  "original_attribution": "Full name of the person who said/wrote this quote"
+  "original_attribution": "Full name of the person who said/wrote this quote",
+"source_work": "The specific work and section (e.g. Republic Book VII, Meditations IV.3). REQUIRED."
 }
 
 Choose based on today's date (${monthName} ${day}) for deterministic variety.`,
 
   german_philosopher: (monthName, day) =>
-    `Share a thought-provoking quote from a German philosopher (16th-20th century: Kant, Hegel, Nietzsche, Schopenhauer, Heidegger, Marx, Leibniz, etc.). Provide context about the work it comes from.
+    `Share a quote from a German philosopher that comes from a SPECIFIC, NAMED work. You must cite the exact source (e.g. Kant's Critique of Pure Reason, Nietzsche's Beyond Good and Evil §146, Schopenhauer's The World as Will and Representation Book I, Hegel's Phenomenology of Spirit). Do NOT use commonly misattributed sayings. The original_text field MUST contain the actual German words from the source text.
 
 Respond with ONLY a JSON object:
 {
@@ -204,13 +205,14 @@ Respond with ONLY a JSON object:
   "category": "one of: ${CATEGORY_LIST}",
   "original_text": "The quote written ONLY in German — the actual German words, no English translation.",
   "original_language": "German",
-  "original_attribution": "Full name of the person who said/wrote this quote"
+  "original_attribution": "Full name of the person who said/wrote this quote",
+"source_work": "The specific work and section (e.g. Critique of Pure Reason B132, Beyond Good and Evil §146). REQUIRED."
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
 
   french_philosopher: (monthName, day) =>
-    `Share an insightful quote from a French philosopher (16th-20th century: Descartes, Voltaire, Rousseau, Montaigne, Pascal, Sartre, Camus, de Beauvoir, Foucault, etc.). Explain its philosophical significance.
+    `Share a quote from a French philosopher that comes from a SPECIFIC, NAMED work. You must cite the exact source (e.g. Descartes' Meditations on First Philosophy, Montaigne's Essays Book III Ch. 13, Pascal's Pensées §347, Camus' The Myth of Sisyphus, Sartre's Being and Nothingness). Do NOT use commonly misattributed sayings. The original_text field MUST contain the actual French words from the source text.
 
 Respond with ONLY a JSON object:
 {
@@ -226,7 +228,7 @@ Respond with ONLY a JSON object:
 Choose based on today's date (${monthName} ${day}) for variety.`,
 
   fiction_author: (monthName, day) =>
-    `Share a memorable quote from a famous fiction author (English, French, or German: Shakespeare, Dickens, Austen, Wilde, Orwell, Tolkien, Hugo, Flaubert, Proust, Goethe, Kafka, Mann, Hesse, etc.). Explain the work it comes from and its literary significance.
+    `Share a passage from a famous work of fiction that you can cite by SPECIFIC work and chapter/act/section. You must name the exact source (e.g. Shakespeare's Hamlet Act III Scene 1, Dostoevsky's The Brothers Karamazov Book V Ch. 5, Kafka's The Trial Ch. 9, Goethe's Faust Part I). Do NOT use commonly misattributed sayings. If the work was not originally in English, the original_text field MUST contain the actual original-language words.
 
 Respond with ONLY a JSON object:
 {
@@ -236,13 +238,14 @@ Respond with ONLY a JSON object:
   "category": "one of: ${CATEGORY_LIST}",
   "original_text": "The quote ONLY in its original language — the actual French, German, etc. words. No English. If originally English, leave empty.",
   "original_language": "The single original language, e.g. English, French, German",
-  "original_attribution": "Full name of the person who wrote this quote"
+  "original_attribution": "Full name of the person who wrote this quote",
+"source_work": "The specific work and section (e.g. Hamlet Act III Scene 1, Faust Part I). REQUIRED."
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
 
   classical_author: (monthName, day) =>
-    `Share a timeless quote from an ancient Greek or Roman author (Homer, Sophocles, Virgil, Ovid, Horace, Cicero, Plutarch, etc.). Provide context about the original work.
+    `Share a passage from an ancient Greek or Roman literary work that you can cite by SPECIFIC work and section. You must name the exact source (e.g. Homer's Iliad Book I, Virgil's Aeneid Book VI, Ovid's Metamorphoses Book I, Sophocles' Antigone lines 450-460, Cicero's De Officiis Book I). Do NOT use commonly misattributed sayings. The original_text field MUST contain the actual Ancient Greek or Latin words from the source text.
 
 Respond with ONLY a JSON object:
 {
@@ -252,7 +255,8 @@ Respond with ONLY a JSON object:
   "category": "one of: ${CATEGORY_LIST}",
   "original_text": "The quote ONLY in its original language — the actual Ancient Greek or Latin words, no English. If originally English, leave empty.",
   "original_language": "The single original language, e.g. Ancient Greek, Latin",
-  "original_attribution": "Full name of the person who wrote this quote"
+  "original_attribution": "Full name of the person who wrote this quote",
+"source_work": "The specific work and section (e.g. Iliad Book I, Aeneid Book VI). REQUIRED."
 }
 
 Choose based on today's date (${monthName} ${day}) for variety.`,
