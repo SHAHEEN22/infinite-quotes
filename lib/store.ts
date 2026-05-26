@@ -67,3 +67,20 @@ export async function getAllEvents(): Promise<StoredEvent[]> {
     return v;
   });
 }
+
+/** Get headlines from the last N days for deduplication */
+export async function getRecentHeadlines(days: number = 30): Promise<string[]> {
+  const headlines: string[] = [];
+  const now = new Date();
+  for (let offset = 1; offset <= days; offset++) {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - offset);
+    const m = d.getUTCMonth() + 1;
+    const dy = d.getUTCDate();
+    const event = await getEvent(m, dy);
+    if (event?.headline) {
+      headlines.push(event.headline);
+    }
+  }
+  return headlines;
+}
