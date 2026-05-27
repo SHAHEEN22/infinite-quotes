@@ -451,8 +451,8 @@ export function validateQuote(
   }
 
   // 5. Headline length sanity check
-  if (event.headline && event.headline.split(/\s+/).length > 25) {
-    reasons.push("headline is too long (over 25 words)");
+  if (event.headline && event.headline.split(/\s+/).length > 75) {
+    reasons.push("headline is too long (over 75 words)");
   }
 
   // 6. Category must be valid
