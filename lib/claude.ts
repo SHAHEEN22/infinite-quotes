@@ -539,15 +539,32 @@ export async function generateContentForDate(
 
   // Pick a random topic, skipping excluded tags
   const excludeSet = new Set(excludeTags);
-  const shuffledTopics = [...topics].sort(() => Math.random() - 0.5);
-  let topic: TopicEntry | null = null;
-  for (const candidate of shuffledTopics) {
-    const hasExcluded = candidate.tags.some(t => excludeSet.has(t));
-    if (!hasExcluded) {
-      topic = candidate;
-      break;
+
+    // Get recently used philosopher/author names to avoid repeats
+    const { getRecentAttributions } = await import("./store");
+    const recentAttributions = await getRecentAttributions(14);
+    const recentAttrSet = new Set(recentAttributions.map(a => a.toLowerCase()));
+
+    const shuffledTopics = [...topics].sort(() => Math.random() - 0.5);
+    let topic: TopicEntry | null = null;
+    for (const candidate of shuffledTopics) {
+          const hasExcluded = candidate.tags.some(t => excludeSet.has(t));
+          const recentlyUsed = recentAttrSet.has(candidate.name.toLowerCase());
+          if (!hasExcluded && !recentlyUsed) {
+                  topic = candidate;
+                  break;
+          }
     }
-  }
+    // If all topics were recently used or excluded, pick any non-excluded one
+    if (!topic) {
+          for (const candidate of shuffledTopics) {
+                  const hasExcluded = candidate.tags.some(t => excludeSet.has(t));
+                  if (!hasExcluded) {
+                            topic = candidate;
+                            break;
+                  }
+          }
+    }
 
   if (!topic) {
     // All topics excluded, fall back to open-ended generation
