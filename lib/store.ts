@@ -84,3 +84,20 @@ export async function getRecentHeadlines(days: number = 30): Promise<string[]> {
   }
   return headlines;
 }
+
+/** Get original attributions (philosopher/author names) from the last N days for topic deduplication */
+export async function getRecentAttributions(days: number = 14): Promise<string[]> {
+    const attributions: string[] = [];
+    const now = new Date();
+    for (let offset = 1; offset <= days; offset++) {
+          const d = new Date(now);
+          d.setUTCDate(d.getUTCDate() - offset);
+          const m = d.getUTCMonth() + 1;
+          const dy = d.getUTCDate();
+          const event = await getEvent(m, dy);
+          if (event?.originalAttribution) {
+                  attributions.push(event.originalAttribution);
+          }
+    }
+    return attributions;
+}
