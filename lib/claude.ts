@@ -88,7 +88,7 @@ export async function summarizeQuote(
 
 Respond with ONLY a JSON object in this exact format (no markdown, no extra text):
 {
-  "headline": "The quote in English (max 15 words). MUST be in English even if the original quote is in another language.",
+  "headline": "The full quote translated into English. Must be a COMPLETE translation matching the original_text — do not truncate. MUST be in English even if the original is in another language.",
   "summary": "2-4 sentences: who said/wrote it, when, from which work, and why it matters or resonates today.",
   "year": "4-digit year the quote was written or the person lived",
   "category": "one of: ${CATEGORY_LIST}",
@@ -182,7 +182,7 @@ const FALLBACK_PROMPTS: Record<FallbackContentType, (monthName: string, day: num
 
 Respond with ONLY a JSON object:
 {
-  "headline": "The quote in English (max 15 words). MUST be in English even if the original is in another language.",
+  "headline": "The full quote translated into English. Must be a COMPLETE translation matching the original_text — do not truncate. MUST be in English even if the original is in another language.",
   "summary": "2-4 sentences: who said it, when they lived, the context of the quote, and why it matters.",
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
@@ -199,7 +199,7 @@ Choose based on today's date (${monthName} ${day}) for deterministic variety.`,
 
 Respond with ONLY a JSON object:
 {
-  "headline": "The quote in English (max 15 words). MUST be in English even if the original is in another language.",
+  "headline": "The full quote translated into English. Must be a COMPLETE translation matching the original_text — do not truncate. MUST be in English even if the original is in another language.",
   "summary": "2-4 sentences: who said it, the work it's from, the philosophical context, and its significance.",
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
@@ -216,7 +216,7 @@ Choose based on today's date (${monthName} ${day}) for variety.`,
 
 Respond with ONLY a JSON object:
 {
-  "headline": "The quote in English (max 15 words). MUST be in English even if the original is in another language.",
+  "headline": "The full quote translated into English. Must be a COMPLETE translation matching the original_text — do not truncate. MUST be in English even if the original is in another language.",
   "summary": "2-4 sentences: who said it, the philosophical tradition, the context of the quote, and why it endures.",
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
@@ -232,7 +232,7 @@ Choose based on today's date (${monthName} ${day}) for variety.`,
 
 Respond with ONLY a JSON object:
 {
-  "headline": "The quote in English (max 15 words). MUST be in English even if the original is in another language.",
+  "headline": "The full quote translated into English. Must be a COMPLETE translation matching the original_text — do not truncate. MUST be in English even if the original is in another language.",
   "summary": "2-4 sentences: who wrote it, which work it's from, the literary context, and why this passage resonates.",
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
@@ -249,7 +249,7 @@ Choose based on today's date (${monthName} ${day}) for variety.`,
 
 Respond with ONLY a JSON object:
 {
-  "headline": "The quote in English (max 15 words). MUST be in English even if the original is in another language.",
+  "headline": "The full quote translated into English. Must be a COMPLETE translation matching the original_text — do not truncate. MUST be in English even if the original is in another language.",
   "summary": "2-4 sentences: who wrote it, which work, the historical context, and why this wisdom endures across millennia.",
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
@@ -601,7 +601,7 @@ ${snippets}
 
 Respond with ONLY a JSON object:
 {
-  "headline": "The quote in English (max 15 words). MUST be in English.",
+  "headline": "The full quote translated into English. Must be a COMPLETE translation matching the original_text — do not truncate. MUST be in English.",
   "summary": "2-4 sentences: the source work (book, chapter, section), context, and why it endures.",
   "year": "4-digit year",
   "category": "one of: ${CATEGORY_LIST}",
@@ -656,7 +656,7 @@ Context: ${topic.description}
 
 Respond with ONLY a JSON object:
 {
-  "headline": "The quote in English (max 15 words). MUST be in English even if the original is in another language.",
+  "headline": "The full quote translated into English. Must be a COMPLETE translation matching the original_text — do not truncate. MUST be in English even if the original is in another language.",
   "summary": "2-4 sentences: the quote's context, who said/wrote it, and why this wisdom endures.",
   "year": "4-digit year or approximate era",
   "category": "one of: ${CATEGORY_LIST}",
