@@ -390,6 +390,14 @@ const REFUSAL_PATTERNS = [
 ];
 
 /** Validate a generated quote before storing it in KV */
+/** Content types whose quotes are inherently non-English and must include original-language text */
+const NON_ENGLISH_TYPES: Set<string> = new Set<string>([
+  "greek_philosopher",
+  "german_philosopher",
+  "french_philosopher",
+  "classical_author",
+]);
+
 export function validateQuote(
   event: ParanormalEvent,
   recentHeadlines: string[] = []
@@ -436,6 +444,13 @@ export function validateQuote(
         reasons.push("originalText contains refusal pattern");
         break;
       }
+    }
+  }
+
+  // 3b. Non-English content must include original-language text (cleared by ensureOriginalText when unverifiable).
+  if (NON_ENGLISH_TYPES.has(event.contentType)) {
+    if (!event.originalText || event.originalText.trim().length === 0) {
+      reasons.push("missing original-language text for " + event.contentType);
     }
   }
 
